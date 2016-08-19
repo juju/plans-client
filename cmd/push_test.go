@@ -1,10 +1,9 @@
 // Copyright 2016 Canonical Ltd.  All rights reserved.
 
-package push_test
+package cmd_test
 
 import (
-	stdtesting "testing"
-
+	jujucmd "github.com/juju/cmd"
 	"github.com/juju/cmd/cmdtesting"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
@@ -12,13 +11,9 @@ import (
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
 
 	"github.com/CanonicalLtd/plans-client/api"
-	cmd "github.com/CanonicalLtd/plans-client/cmd/push"
+	"github.com/CanonicalLtd/plans-client/cmd"
 	plantesting "github.com/CanonicalLtd/plans-client/testing"
 )
-
-func TestPackage(t *stdtesting.T) {
-	gc.TestingT(t)
-}
 
 type pushSuite struct {
 	testing.CleanupSuite
@@ -50,19 +45,28 @@ func (s *pushSuite) TestPushCommand(c *gc.C) {
 		apiCall []interface{}
 	}{{
 		about: "unrecognized args causes error",
-		args:  []string{"testisv/default", "example.yaml", "foobar"},
+		args:  []string{"push-plan", "example.yaml", "testisv/default", "foobar"},
 		err:   `unknown command line arguments: foobar`,
 	}, {
 		about:   "everything works",
-		args:    []string{"testisv/default", "example.yaml", "--url", "localhost:0"},
+		args:    []string{"push-plan", "example.yaml", "testisv/default", "--url", "localhost:0"},
 		stdout:  "saved as plan: testisv/default\n",
 		apiCall: []interface{}{"testisv/default", plantesting.TestPlan},
 	},
 	}
 
 	for i, t := range tests {
+		testCommand := jujucmd.NewSuperCommand(
+			jujucmd.SuperCommandParams{
+				Name:    "test",
+				Doc:     "test command",
+				Purpose: "testing",
+			},
+		)
+		testCommand.Register(&cmd.PushCommand{})
+
 		c.Logf("Running test %d %s", i, t.about)
-		ctx, err := cmdtesting.RunCommand(c, &cmd.PushCommand{}, t.args...)
+		ctx, err := cmdtesting.RunCommand(c, testCommand, t.args...)
 		if t.err != "" {
 			c.Assert(err, gc.ErrorMatches, t.err)
 			c.Assert(s.mockAPI.Calls(), gc.HasLen, 0)
