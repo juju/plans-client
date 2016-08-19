@@ -1,7 +1,7 @@
 // Copyright 2014 Canonical Ltd.  All rights reserved.
 
 // wireformat package contains wireformat structs intended for
-// subscription service plan management API.
+// plan management API.
 package wireformat
 
 import (
@@ -41,8 +41,7 @@ type PlanActive struct {
 }
 
 // Plan structure is used as a wire format to store information on ISV-created
-// rating plan and charm URLs for which the plan is valid (a subscription
-// using this plan can be created).
+// rating plan and charm URLs for which the plan is valid.
 type Plan struct {
 	URL             string `json:"url"`        // Name of the rating plan
 	Definition      string `json:"plan"`       // The rating plan source
@@ -182,7 +181,8 @@ func (s AuthorizationRequest) Validate() error {
 	return nil
 }
 
-// Authorization defines the struct containing information on an issued request for a subscription macaroon.
+// Authorization defines the struct containing information on an issued request
+// for an authorization macaroon.
 type Authorization struct {
 	AuthorizationID string    `json:"authorization-id"` // TODO(cmars): rename to AuthUUID & auth-uuid
 	User            string    `json:"user"`
