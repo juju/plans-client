@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -166,15 +167,19 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 	}
 	defer util.DiscardClose(response)
 
+	resp, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return errors.Trace(err)
+	}
+
 	if response.StatusCode != http.StatusOK {
-		decoder := json.NewDecoder(response.Body)
 		var e struct {
 			Code    string `json:"code"`
 			Message string `json:"message"`
 		}
-		err = decoder.Decode(&e)
+		err := json.Unmarshal(resp, &e)
 		if err != nil {
-			return errors.Annotatef(err, "failed to %v the plan", operation)
+			return errors.Annotatef(err, "failed to %v the plan: %v", operation, string(resp))
 		}
 		return errors.Errorf("failed to %v the plan: %v [%v]", operation, e.Message, e.Code)
 	}
