@@ -14,15 +14,15 @@ import (
 	plantesting "github.com/CanonicalLtd/plans-client/testing"
 )
 
-type pushSuite struct {
+type releaseSuite struct {
 	testing.CleanupSuite
 	mockAPI *plantesting.MockPlanClient
 	stub    *testing.Stub
 }
 
-var _ = gc.Suite(&pushSuite{})
+var _ = gc.Suite(&releaseSuite{})
 
-func (s *pushSuite) SetUpTest(c *gc.C) {
+func (s *releaseSuite) SetUpTest(c *gc.C) {
 	s.stub = &testing.Stub{}
 
 	s.mockAPI = plantesting.NewMockPlanClient()
@@ -30,12 +30,9 @@ func (s *pushSuite) SetUpTest(c *gc.C) {
 	s.PatchValue(cmd.NewClient, func(string, *httpbakery.Client) (api.PlanClient, error) {
 		return s.mockAPI, nil
 	})
-	s.PatchValue(cmd.ReadFile, func(string) ([]byte, error) {
-		return []byte(plantesting.TestPlan), nil
-	})
 }
 
-func (s *pushSuite) TestPushCommand(c *gc.C) {
+func (s *releaseSuite) TestReleaseCommand(c *gc.C) {
 	tests := []struct {
 		about   string
 		args    []string
@@ -44,29 +41,29 @@ func (s *pushSuite) TestPushCommand(c *gc.C) {
 		apiCall []interface{}
 	}{{
 		about: "unrecognized args causes error",
-		args:  []string{"example.yaml", "testisv/default", "foobar"},
+		args:  []string{"testisv/default", "foobar"},
 		err:   `unknown command line arguments: foobar`,
 	}, {
 		about:   "everything works",
-		args:    []string{"example.yaml", "testisv/default", "--url", "localhost:0"},
-		stdout:  "saved as plan: testisv/default\n",
-		apiCall: []interface{}{"testisv/default", plantesting.TestPlan},
+		args:    []string{"testisv/default", "--url", "localhost:0"},
+		stdout:  "testisv/default\n",
+		apiCall: []interface{}{"testisv/default"},
 	},
 	}
 
 	for i, t := range tests {
 		c.Logf("Running test %d %s", i, t.about)
-		ctx, err := cmdtesting.RunCommand(c, cmd.NewPushCommand(), t.args...)
+		ctx, err := cmdtesting.RunCommand(c, cmd.NewReleaseCommand(), t.args...)
 		if t.err != "" {
 			c.Assert(err, gc.ErrorMatches, t.err)
 			c.Assert(s.mockAPI.Calls(), gc.HasLen, 0)
 		} else {
 			c.Assert(err, jc.ErrorIsNil)
 			c.Assert(s.mockAPI.Calls(), gc.HasLen, 1)
-			s.mockAPI.CheckCall(c, 0, "Save", t.apiCall...)
+			s.mockAPI.CheckCall(c, 0, "Release", t.apiCall...)
 		}
 		if ctx != nil {
-			c.Assert(cmdtesting.Stdout(ctx), gc.Equals, t.stdout)
+			c.Assert(cmdtesting.Stderr(ctx), gc.Equals, t.stdout)
 		}
 	}
 }
