@@ -75,7 +75,7 @@ func (s *clientIntegrationSuite) TestSaveFail(c *gc.C) {
 	c.Assert(err, gc.ErrorMatches, `failed to store the plan: silly error \[bad request\]`)
 }
 
-func (s *clientIntegrationSuite) TestPublish(c *gc.C) {
+func (s *clientIntegrationSuite) TestRelease(c *gc.C) {
 	p := wireformat.Plan{
 		URL:        "testisv/default",
 		Definition: testPlan,
@@ -83,18 +83,18 @@ func (s *clientIntegrationSuite) TestPublish(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 	s.httpClient.body = p
 
-	plan, err := s.planClient.Publish("testisv/default")
+	plan, err := s.planClient.Release("testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(plan, gc.DeepEquals, &p)
-	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/publish", nil)
+	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/release", nil)
 }
 
-func (s *clientIntegrationSuite) TestPublishInvalidPlanURL(c *gc.C) {
-	_, err := s.planClient.Publish("invalid/format/testisv/default")
+func (s *clientIntegrationSuite) TestReleaseInvalidPlanURL(c *gc.C) {
+	_, err := s.planClient.Release("invalid/format/testisv/default")
 	c.Assert(err, gc.ErrorMatches, "invalid plan url format")
 }
 
-func (s *clientIntegrationSuite) TestPublishFail(c *gc.C) {
+func (s *clientIntegrationSuite) TestReleaseFail(c *gc.C) {
 	s.httpClient.status = http.StatusBadRequest
 	s.httpClient.body = struct {
 		Code    string `json:"code"`
@@ -104,8 +104,8 @@ func (s *clientIntegrationSuite) TestPublishFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.Publish("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to publish the plan: silly error \[bad request\]`)
+	_, err := s.planClient.Release("testisv/default")
+	c.Assert(err, gc.ErrorMatches, `failed to release the plan: silly error \[bad request\]`)
 }
 
 func (s *clientIntegrationSuite) TestSuspend(c *gc.C) {
