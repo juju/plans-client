@@ -4,11 +4,15 @@ package cmd
 
 import (
 	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/juju/cmd"
-	"github.com/juju/errors"
+	"github.com/juju/idmclient/ussologin"
+	"github.com/juju/juju/juju/osenv"
+	"github.com/juju/juju/jujuclient"
 	"github.com/juju/persistent-cookiejar"
+	"gopkg.in/juju/environschema.v1/form"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
 	"launchpad.net/gnuflag"
 )
@@ -36,19 +40,22 @@ type baseCommand struct {
 
 // NewClient returns a new http bakery client for Omnibus commands.
 func (s *baseCommand) NewClient() (*httpbakery.Client, error) {
-	if s.cookiejar == nil {
-		cookieFile := cookiejar.DefaultCookieFile()
-		jar, err := cookiejar.New(&cookiejar.Options{
-			Filename: cookieFile,
-		})
-		if err != nil {
-			return nil, errors.Trace(err)
-		}
-		s.cookiejar = jar
+	jujuXDGDataHome := osenv.JujuXDGDataHomeDir()
+	if jujuXDGDataHome == "" {
+		panic("cannot determine juju data home, required model variables are not set")
 	}
+	osenv.SetJujuXDGDataHome(jujuXDGDataHome)
 	client := httpbakery.NewClient()
-	client.Jar = s.cookiejar
-	client.VisitWebPage = httpbakery.OpenWebBrowser
+	filler := &form.IOFiller{
+		In:  os.Stdin,
+		Out: os.Stdout,
+	}
+	client.VisitWebPage = ussologin.VisitWebPage(
+		"juju",
+		&http.Client{},
+		filler,
+		jujuclient.NewTokenStore(),
+	)
 	return client, nil
 }
 
