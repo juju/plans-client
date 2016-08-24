@@ -22,9 +22,9 @@ var planURLComponentRe = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
 // PlanDetails defines the wireformat for a plan with details abouts
 // historical lifecycle.
 type PlanDetails struct {
-	Plan      Plan               `json:"plan"`
-	Published *Event             `json:"published-event,omitempty"`
-	Charm     map[string][]Event `json:"charm-event,omitempty"`
+	Plan     Plan               `json:"plan"`
+	Released *Event             `json:"released-event,omitempty"`
+	Charm    map[string][]Event `json:"charm-event,omitempty"`
 }
 
 // Event defines the wireformat for a backend.event
@@ -48,7 +48,7 @@ type Plan struct {
 	CreatedOn       string `json:"created-on"` // When the plan was created - RFC3339 encoded timestamp
 	PlanDescription string `json:"description"`
 	PlanPrice       string `json:"price"`
-	Published       bool   `json:"published"`
+	Released        bool   `json:"released"`
 }
 
 // ParsePlanURL returns the plan's owner and name.

@@ -38,9 +38,9 @@ func NewMockPlanClient() *MockPlanClient {
 	}
 }
 
-// Publish publishes the specified plan.
-func (m *MockPlanClient) Publish(planURL string) (*wireformat.Plan, error) {
-	m.MethodCall(m, "Publish", planURL)
+// Release releases the specified plan.
+func (m *MockPlanClient) Release(planURL string) (*wireformat.Plan, error) {
+	m.MethodCall(m, "Release", planURL)
 	p := &wireformat.Plan{
 		URL:        "testisv/default",
 		Definition: TestPlan,

@@ -36,8 +36,8 @@ type PlanClient interface {
 	Suspend(planURL string, all bool, charmURLs ...string) error
 	// Resume resumes the plan for specified charms.
 	Resume(planURL string, all bool, charmURLs ...string) error
-	// Publish publishes the specified plan.
-	Publish(planURL string) (*wireformat.Plan, error)
+	// Release releases the specified plan.
+	Release(planURL string) (*wireformat.Plan, error)
 }
 
 type httpClient interface {
@@ -82,13 +82,13 @@ func NewPlanClient(url string, options ...ClientOption) (*client, error) {
 	return c, nil
 }
 
-// Publish publishes the specified plan.
-func (c *client) Publish(planURL string) (*wireformat.Plan, error) {
+// Release releases the specified plan.
+func (c *client) Release(planURL string) (*wireformat.Plan, error) {
 	pURL, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/publish", c.plansService, pURL.Owner, pURL.Name))
+	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/release", c.plansService, pURL.Owner, pURL.Name))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -99,7 +99,7 @@ func (c *client) Publish(planURL string) (*wireformat.Plan, error) {
 
 	response, err := c.client.Do(req)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to publish the plan")
+		return nil, errors.Annotate(err, "failed to release the plan")
 	}
 	defer util.DiscardClose(response)
 	if response.StatusCode != http.StatusOK {
@@ -110,9 +110,9 @@ func (c *client) Publish(planURL string) (*wireformat.Plan, error) {
 		decoder := json.NewDecoder(response.Body)
 		err = decoder.Decode(&e)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to publish the plan")
+			return nil, errors.Annotate(err, "failed to release the plan")
 		}
-		return nil, errors.Errorf("failed to publish the plan: %v [%v]", e.Message, e.Code)
+		return nil, errors.Errorf("failed to release the plan: %v [%v]", e.Message, e.Code)
 	}
 
 	var plan wireformat.Plan
