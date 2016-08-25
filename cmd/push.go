@@ -21,12 +21,18 @@ push-plan plan.yaml canonical/default
 	uploads a new plan owned by canonical under the name default with the
 	definition contained in the file plan.yaml
 `
+const pushPlanPurpose = "push new plan"
 
 var (
 	newClient = func(url string, client *httpbakery.Client) (api.PlanClient, error) {
 		return api.NewPlanClient(url, api.HTTPClient(client))
 	}
 )
+
+// NewPushCommand returns a new PushCommand.
+func NewPushCommand() cmd.Command {
+	return WrapPlugin(&PushCommand{})
+}
 
 // PushCommand uploads a new plan to the plans service
 type PushCommand struct {
@@ -36,15 +42,15 @@ type PushCommand struct {
 	PlanURL  string
 }
 
-// NewPushCommand creates a new PushCommand.
-func NewPushCommand() *PushCommand {
-	return &PushCommand{}
-}
-
 // SetFlags implements Command.SetFlags.
 func (c *PushCommand) SetFlags(f *gnuflag.FlagSet) {
 	c.baseCommand.ServiceURL = defaultServiceURL()
 	c.baseCommand.SetFlags(f)
+}
+
+// Description returns a one-line description of the command.
+func (c *PushCommand) Description() string {
+	return pushPlanPurpose
 }
 
 // Info implements Command.Info.
@@ -52,7 +58,7 @@ func (c *PushCommand) Info() *cmd.Info {
 	return &cmd.Info{
 		Name:    "push-plan",
 		Args:    "<filename> <plan url>",
-		Purpose: "push new plan",
+		Purpose: pushPlanPurpose,
 		Doc:     pushDoc,
 	}
 }

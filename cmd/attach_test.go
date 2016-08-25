@@ -5,7 +5,6 @@ package cmd_test
 import (
 	"net/http"
 
-	jujucmd "github.com/juju/cmd"
 	"github.com/juju/cmd/cmdtesting"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
@@ -38,7 +37,7 @@ func (s *attachSuite) SetUpTest(c *gc.C) {
 	})
 }
 
-func (s *attachSuite) TestAttach(c *gc.C) {
+func (s *attachSuite) TestCommand(c *gc.C) {
 	tests := []struct {
 		about            string
 		args             []string
@@ -49,7 +48,7 @@ func (s *attachSuite) TestAttach(c *gc.C) {
 		assertCalls      func(*testing.Stub)
 	}{{
 		about:  "unrecognized args causes error",
-		args:   []string{"attach-plan", "some-charm-url", "testisv", "some-arg"},
+		args:   []string{"some-charm-url", "testisv", "some-arg"},
 		err:    `unknown command line arguments: some-arg`,
 		stdout: "",
 		assertCalls: func(stub *testing.Stub) {
@@ -57,7 +56,7 @@ func (s *attachSuite) TestAttach(c *gc.C) {
 		},
 	}, {
 		about: "everything works",
-		args:  []string{"attach-plan", "some-charm-url", "testisv/default"},
+		args:  []string{"some-charm-url", "testisv/default"},
 		stdout: `OK
 `,
 		assertCalls: func(stub *testing.Stub) {
@@ -67,7 +66,7 @@ func (s *attachSuite) TestAttach(c *gc.C) {
 	}, {
 		about:            "unresolved charm url causes error",
 		resolvedCharmURL: "series/some-charm-url-4",
-		args:             []string{"attach-plan", "some-charm-url", "testisv/default", "--default"},
+		args:             []string{"some-charm-url", "testisv/default", "--default"},
 		err:              `charm url "some-charm-url" is not resolved - did you mean "series/some-charm-url-4"\?`,
 		stdout:           "",
 		assertCalls: func(stub *testing.Stub) {
@@ -75,7 +74,7 @@ func (s *attachSuite) TestAttach(c *gc.C) {
 		},
 	}, {
 		about: "everything works - set default plan",
-		args:  []string{"attach-plan", "some-charm-url", "testisv/default", "--default"},
+		args:  []string{"some-charm-url", "testisv/default", "--default"},
 		stdout: `OK
 `,
 		assertCalls: func(stub *testing.Stub) {
@@ -84,15 +83,15 @@ func (s *attachSuite) TestAttach(c *gc.C) {
 		},
 	}, {
 		about:        "plan not valid for charm",
-		args:         []string{"attach-plan", "some-charm-url", "testisv/default"},
+		args:         []string{"some-charm-url", "testisv/default"},
 		charmMetrics: []string{"pings"},
-		err:          `cmd: error out silently`,
+		err:          "plan testisv/default cannot be used to rate charm some-charm-url: no common metrics",
 		assertCalls: func(stub *testing.Stub) {
 			stub.CheckCall(c, 0, "Get", "testisv/default")
 		},
 	}, {
 		about: "missing args",
-		args:  []string{"attach-plan"},
+		args:  []string{},
 		err:   `missing charm and plan url`,
 		assertCalls: func(stub *testing.Stub) {
 			stub.CheckNoCalls(c)
@@ -102,20 +101,13 @@ func (s *attachSuite) TestAttach(c *gc.C) {
 
 	for i, t := range tests {
 		s.mockAPI.ResetCalls()
-		testCommand := jujucmd.NewSuperCommand(
-			jujucmd.SuperCommandParams{
-				Name:    "test",
-				Doc:     "test command",
-				Purpose: "testing",
-			},
-		)
-		testCommand.Register(&cmd.AttachCommand{
+		testCommand := &cmd.AttachCommand{
 			CharmResolver: &mockCharmResolver{
 				Stub:         &testing.Stub{},
 				ResolvedURL:  t.resolvedCharmURL,
 				CharmMetrics: t.charmMetrics,
 			},
-		})
+		}
 
 		c.Logf("Running test %d %s", i, t.about)
 		ctx, err := cmdtesting.RunCommand(c, testCommand, t.args...)

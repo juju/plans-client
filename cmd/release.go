@@ -17,6 +17,7 @@ Example
 release-plan canonical/foobar
 	release the canonical/foobar plan
 `
+const releasePlanPurpose = "release the plan"
 
 // ReleaseCommand adds a charm to existing plans
 type ReleaseCommand struct {
@@ -25,8 +26,8 @@ type ReleaseCommand struct {
 }
 
 // NewReleaseCommand creates a new ReleaseCommand.
-func NewReleaseCommand() *ReleaseCommand {
-	return &ReleaseCommand{}
+func NewReleaseCommand() cmd.Command {
+	return WrapPlugin(&ReleaseCommand{})
 }
 
 // SetFlags implements Command.SetFlags.
@@ -40,9 +41,14 @@ func (c *ReleaseCommand) Info() *cmd.Info {
 	return &cmd.Info{
 		Name:    "release-plans",
 		Args:    "<plan>",
-		Purpose: "release the plan",
+		Purpose: releasePlanPurpose,
 		Doc:     releaseDoc,
 	}
+}
+
+// Description returns a one-line description of the command.
+func (c *ReleaseCommand) Description() string {
+	return releasePlanPurpose
 }
 
 // Init implements Command.Init.

@@ -3,7 +3,6 @@
 package cmd_test
 
 import (
-	jujucmd "github.com/juju/cmd"
 	"github.com/juju/cmd/cmdtesting"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
@@ -33,7 +32,7 @@ func (s *suspendSuite) SetUpTest(c *gc.C) {
 	})
 }
 
-func (s *suspendSuite) TestAttach(c *gc.C) {
+func (s *suspendSuite) TestCommand(c *gc.C) {
 	tests := []struct {
 		about       string
 		args        []string
@@ -41,19 +40,19 @@ func (s *suspendSuite) TestAttach(c *gc.C) {
 		assertCalls func(*testing.Stub)
 	}{{
 		about: "everything works",
-		args:  []string{"suspend-plan", "testisv/default", "some-charm-url1", "some-charm-url2"},
+		args:  []string{"testisv/default", "some-charm-url1", "some-charm-url2"},
 		assertCalls: func(stub *testing.Stub) {
 			stub.CheckCall(c, 0, "Suspend", "testisv/default", false, []string{"some-charm-url1", "some-charm-url2"})
 		},
 	}, {
 		about: "everything works - all flag",
-		args:  []string{"suspend-plan", "testisv/default", "--all"},
+		args:  []string{"testisv/default", "--all"},
 		assertCalls: func(stub *testing.Stub) {
 			stub.CheckCall(c, 0, "Suspend", "testisv/default", true, []string{})
 		},
 	}, {
 		about: "arg conflict - all flag",
-		args:  []string{"suspend-plan", "testisv/default", "some-charm-url", "--all"},
+		args:  []string{"testisv/default", "some-charm-url", "--all"},
 		err:   `cannot use --all and specify charm urls`,
 		assertCalls: func(stub *testing.Stub) {
 			stub.CheckNoCalls(c)
@@ -70,17 +69,8 @@ func (s *suspendSuite) TestAttach(c *gc.C) {
 
 	for i, t := range tests {
 		s.mockAPI.ResetCalls()
-		testCommand := jujucmd.NewSuperCommand(
-			jujucmd.SuperCommandParams{
-				Name:    "test",
-				Doc:     "test command",
-				Purpose: "testing",
-			},
-		)
-		testCommand.Register(cmd.NewSuspendCommand())
-
 		c.Logf("Running test %d %s", i, t.about)
-		_, err := cmdtesting.RunCommand(c, testCommand, t.args...)
+		_, err := cmdtesting.RunCommand(c, cmd.NewSuspendCommand(), t.args...)
 		if t.err != "" {
 			c.Assert(err, gc.ErrorMatches, t.err)
 		} else {
