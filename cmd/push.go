@@ -36,6 +36,11 @@ type PushCommand struct {
 	PlanURL  string
 }
 
+// NewPushCommand creates a new PushCommand.
+func NewPushCommand() *PushCommand {
+	return &PushCommand{}
+}
+
 // SetFlags implements Command.SetFlags.
 func (c *PushCommand) SetFlags(f *gnuflag.FlagSet) {
 	c.baseCommand.ServiceURL = defaultServiceURL()
