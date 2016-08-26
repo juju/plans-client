@@ -35,7 +35,7 @@ func (s *pushSuite) SetUpTest(c *gc.C) {
 	})
 }
 
-func (s *pushSuite) TestPushCommand(c *gc.C) {
+func (s *pushSuite) TestCommand(c *gc.C) {
 	tests := []struct {
 		about   string
 		args    []string

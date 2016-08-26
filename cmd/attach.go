@@ -18,6 +18,10 @@ attach-plan some-charm canonical/landscape-default
 	enables deploys of the some-charm using the canonical/landscape-default plan.
 `
 
+const attachPlanPurpose = "associates the charm with the plan"
+
+var _ cmd.Command = (*AttachCommand)(nil)
+
 // AttachCommand adds a charm to existing plans
 type AttachCommand struct {
 	baseCommand
@@ -31,10 +35,10 @@ type AttachCommand struct {
 }
 
 // NewAttachCommand creates a new AttachCommand.
-func NewAttachCommand() *AttachCommand {
-	return &AttachCommand{
+func NewAttachCommand() cmd.Command {
+	return WrapPlugin(&AttachCommand{
 		CharmResolver: NewCharmStoreResolver(),
-	}
+	})
 }
 
 // SetFlags implements Command.SetFlags.
@@ -45,12 +49,17 @@ func (c *AttachCommand) SetFlags(f *gnuflag.FlagSet) {
 	f.BoolVar(&c.IsDefault, "default", false, "set this plan as the default for the charm")
 }
 
+// Description returns a one-line description of the command.
+func (c *AttachCommand) Description() string {
+	return attachPlanPurpose
+}
+
 // Info implements Command.Info.
 func (c *AttachCommand) Info() *cmd.Info {
 	return &cmd.Info{
 		Name:    "attach-plan",
 		Args:    "<charm url> <plan url>",
-		Purpose: "associates the charm with the plan",
+		Purpose: attachPlanPurpose,
 		Doc:     attachPlanDoc,
 	}
 }

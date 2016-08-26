@@ -14,16 +14,17 @@ Example
 suspend-plan foocorp/free cs:~foocorp/app-0 cs:~foocorp/app-1
 	disables deploys of the two specified charms using the foocorp/free plan.
 `
+const suspendPlanPurpose = "suspends plan for specified charms"
 
 // NewSuspendCommand creates a new command that can
 // be used to suspend plans.
-func NewSuspendCommand() *suspendResumeCommand {
-	return &suspendResumeCommand{
+func NewSuspendCommand() cmd.Command {
+	return WrapPlugin(&suspendResumeCommand{
 		op:      suspendOp,
 		name:    "suspend-plan",
-		purpose: "suspends plan for specified charms",
+		purpose: suspendPlanPurpose,
 		doc:     suspendPlanDoc,
-	}
+	})
 }
 
 type operation string
@@ -52,6 +53,11 @@ func (c *suspendResumeCommand) SetFlags(f *gnuflag.FlagSet) {
 	c.baseCommand.ServiceURL = defaultServiceURL()
 	c.baseCommand.SetFlags(f)
 	f.BoolVar(&c.All, "all", false, "suspend plan for all charms")
+}
+
+// Description returns a one-line description of the command.
+func (c *suspendResumeCommand) Description() string {
+	return suspendPlanPurpose
 }
 
 // Info implements Command.Info.

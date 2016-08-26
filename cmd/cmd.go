@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -67,9 +68,9 @@ func (s *baseCommand) Close() error {
 	return nil
 }
 
-// NewbaseCommand creates a new baseCommand with the default service
+// newBaseCommand creates a new baseCommand with the default service
 // url set.
-func NewbaseCommand() *baseCommand {
+func newBaseCommand() *baseCommand {
 	return &baseCommand{
 		ServiceURL: defaultServiceURL(),
 	}
@@ -81,4 +82,42 @@ func (c *baseCommand) SetFlags(f *gnuflag.FlagSet) {
 		c.ServiceURL = defaultServiceURL()
 	}
 	f.StringVar(&c.ServiceURL, "url", c.ServiceURL, "host and port of the plans services")
+}
+
+type commandWithDescription interface {
+	cmd.Command
+	Description() string
+}
+
+// WrapPlugin returns a wrapped plugin command.
+func WrapPlugin(cmd commandWithDescription) cmd.Command {
+	return &pluginWrapper{commandWithDescription: cmd}
+}
+
+type pluginWrapper struct {
+	commandWithDescription
+	Description bool
+}
+
+// SetFlags implements Command.SetFlags.
+func (c *pluginWrapper) SetFlags(f *gnuflag.FlagSet) {
+	c.commandWithDescription.SetFlags(f)
+	f.BoolVar(&c.Description, "description", false, "returns command description")
+}
+
+// Init implements Command.Init.
+func (c *pluginWrapper) Init(args []string) error {
+	if c.Description {
+		return nil
+	}
+	return c.commandWithDescription.Init(args)
+}
+
+// Run implements Command.Run.
+func (c *pluginWrapper) Run(ctx *cmd.Context) error {
+	if c.Description {
+		fmt.Fprint(ctx.Stdout, c.commandWithDescription.Description())
+		return nil
+	}
+	return c.commandWithDescription.Run(ctx)
 }
