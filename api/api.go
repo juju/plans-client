@@ -38,6 +38,8 @@ type PlanClient interface {
 	Resume(planURL string, all bool, charmURLs ...string) error
 	// Release releases the specified plan.
 	Release(planURL string) (*wireformat.Plan, error)
+	// GetPlanDetails returns detailed information about a plan.
+	GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 }
 
 type httpClient interface {
@@ -399,4 +401,44 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 		return nil, errors.Annotatef(err, "failed to unmarshal response")
 	}
 	return plans, nil
+}
+
+// GetPlanDetailes returns detailed information about a plan.
+func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error) {
+	u, err := url.Parse(c.plansService + "/p/" + planURL + "/details")
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create a GET request")
+	}
+
+	response, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to retrieve matching plans")
+	}
+	defer util.DiscardClose(response)
+
+	if response.StatusCode != http.StatusOK {
+		decoder := json.NewDecoder(response.Body)
+		var e struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		}
+		err = decoder.Decode(&e)
+		if err != nil {
+			return nil, errors.Annotatef(err, "failed to retrieve plan details")
+		}
+		return nil, errors.Errorf("failed to retrieve plan details: %v [%v]", e.Message, e.Code)
+	}
+
+	var plan wireformat.PlanDetails
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&plan)
+	if err != nil {
+		return nil, errors.Annotatef(err, "failed to unmarshal the response")
+	}
+	return &plan, nil
 }

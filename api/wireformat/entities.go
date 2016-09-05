@@ -19,12 +19,21 @@ import (
 // Regular expression for validating plan owners and plan names.
 var planURLComponentRe = regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
 
+type CharmPlanDetail struct {
+	CharmURL       string     `json:"charm"`
+	Attached       Event      `json:"attached"`
+	EffectiveSince *time.Time `json:"effective-since,omitempty"`
+	Default        bool       `json:"default"`
+	Events         []Event    `json:"events"`
+}
+
 // PlanDetails defines the wireformat for a plan with details abouts
 // historical lifecycle.
 type PlanDetails struct {
-	Plan     Plan               `json:"plan"`
-	Released *Event             `json:"released-event,omitempty"`
-	Charm    map[string][]Event `json:"charm-event,omitempty"`
+	Plan     Plan              `json:"plan"`
+	Created  Event             `json:"created-event"`
+	Released *Event            `json:"released-event,omitempty"`
+	Charms   []CharmPlanDetail `json:"charms,omitempty"`
 }
 
 // Event defines the wireformat for a backend.event
