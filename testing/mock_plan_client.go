@@ -29,12 +29,13 @@ var TestPlan = `
 // MockPlanClient implements a mock of the plan api client.
 type MockPlanClient struct {
 	*jujutesting.Stub
+	PlanDetails *wireformat.PlanDetails
 }
 
 // NewMockPlanClient returns a new MockPlanClient
 func NewMockPlanClient() *MockPlanClient {
 	return &MockPlanClient{
-		&jujutesting.Stub{},
+		Stub: &jujutesting.Stub{},
 	}
 }
 
@@ -102,6 +103,58 @@ func (m *MockPlanClient) Get(planURL string) ([]wireformat.Plan, error) {
 		CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
 	}
 	return []wireformat.Plan{p}, nil
+}
+
+// GetPlanDetails returns detailed information about a plan.
+func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error) {
+	m.MethodCall(m, "GetPlanDetails", planURL)
+	if m.PlanDetails != nil {
+		return m.PlanDetails, m.NextErr()
+	} else {
+		t := time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC)
+		return &wireformat.PlanDetails{
+			Plan: wireformat.Plan{
+				URL:             planURL,
+				Definition:      TestPlan,
+				CreatedOn:       time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+				PlanDescription: "a test plan",
+				PlanPrice:       "a test plan price description",
+			},
+			Created: wireformat.Event{
+				User: "jane.jaas",
+				Type: "create",
+				Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+			},
+			Released: &wireformat.Event{
+				User: "jane.jaas",
+				Type: "release",
+				Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+			},
+			Charms: []wireformat.CharmPlanDetail{{
+				CharmURL: "cs:~testisv/charm1-0",
+				Attached: wireformat.Event{
+					User: "jane.jaas",
+					Type: "create",
+					Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+				},
+				Default: false,
+			}, {
+				CharmURL: "cs:~testisv/charm2-1",
+				Attached: wireformat.Event{
+					User: "joe.jaas",
+					Type: "create",
+					Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+				},
+				EffectiveSince: &t,
+				Default:        true,
+				Events: []wireformat.Event{{
+					User: "eve.jaas",
+					Type: "suspend",
+					Time: time.Date(2015, 0, 0, 1, 2, 3, 0, time.UTC),
+				}},
+			}},
+		}, m.NextErr()
+	}
 }
 
 var _ api.PlanClient = (*MockPlanClient)(nil)

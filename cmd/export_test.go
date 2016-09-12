@@ -5,6 +5,7 @@ package cmd
 var (
 	ReadFile  = &readFile
 	NewClient = &newClient
+	FromWire  = fromWire
 )
 
 // BaseCommand type is exported for test purposes.

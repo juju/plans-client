@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	stdtesting "testing"
+	"time"
 
 	"github.com/juju/errors"
 	jc "github.com/juju/testing/checkers"
@@ -312,6 +313,57 @@ func (s *clientIntegrationSuite) TestPlansForCharmFail(c *gc.C) {
 
 	_, err := s.planClient.GetPlansForCharm("cs:~testers/charm1-0")
 	c.Assert(err, gc.ErrorMatches, `failed to retrieve associated plans: silly error \[bad request\]`)
+}
+
+func (s *clientIntegrationSuite) TestGetPlanDetails(c *gc.C) {
+	s.httpClient.status = http.StatusOK
+	p := wireformat.PlanDetails{
+		Plan: wireformat.Plan{
+			URL:        "testisv/default",
+			Definition: testPlan,
+			CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		},
+		Created: wireformat.Event{
+			User: "jane.jaas",
+			Type: "create",
+			Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+		},
+		Released: &wireformat.Event{
+			User: "jane.jaas",
+			Type: "release",
+			Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+		},
+		Charms: []wireformat.CharmPlanDetail{{
+			CharmURL: "cs:~testisv/charm1-0",
+			Attached: wireformat.Event{
+				User: "jane.jaas",
+				Type: "create",
+				Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+			},
+			Default: false,
+		}},
+	}
+	s.httpClient.body = p
+
+	details, err := s.planClient.GetPlanDetails("testisv/default")
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(details, gc.DeepEquals, &p)
+
+	s.httpClient.assertRequest(c, "GET", "/p/testisv/default/details", nil)
+}
+
+func (s *clientIntegrationSuite) TestGetPlanDetailsFail(c *gc.C) {
+	s.httpClient.status = http.StatusBadRequest
+	s.httpClient.body = struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}{
+		Code:    "bad request",
+		Message: "silly error",
+	}
+
+	_, err := s.planClient.GetPlanDetails("testisv/default")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details: silly error \[bad request\]`)
 }
 
 type mockHttpClient struct {
