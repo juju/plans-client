@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 
-	util "github.com/CanonicalLtd/omniutils"
 	"github.com/juju/errors"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
 
@@ -103,7 +102,7 @@ func (c *client) Release(planURL string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to release the plan")
 	}
-	defer util.DiscardClose(response)
+	defer discardClose(response)
 	if response.StatusCode != http.StatusOK {
 		var e struct {
 			Code    string `json:"code"`
@@ -167,7 +166,7 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 	if err != nil {
 		return errors.Annotate(err, "failed to resume the plan")
 	}
-	defer util.DiscardClose(response)
+	defer discardClose(response)
 
 	resp, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -213,7 +212,7 @@ func (c *client) Save(planURL string, definition string) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to store the plan")
 	}
-	defer util.DiscardClose(response)
+	defer discardClose(response)
 
 	if response.StatusCode != http.StatusOK {
 		decoder := json.NewDecoder(response.Body)
@@ -264,7 +263,7 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 	if err != nil {
 		return errors.Annotate(err, "failed to update plan")
 	}
-	defer util.DiscardClose(response)
+	defer discardClose(response)
 
 	if response.StatusCode != http.StatusOK {
 		decoder := json.NewDecoder(response.Body)
@@ -297,7 +296,7 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve matching plans")
 	}
-	defer util.DiscardClose(response)
+	defer discardClose(response)
 
 	if response.StatusCode != http.StatusOK {
 		decoder := json.NewDecoder(response.Body)
@@ -339,7 +338,7 @@ func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve default plan")
 	}
-	defer util.DiscardClose(response)
+	defer discardClose(response)
 
 	if response.StatusCode != http.StatusOK {
 		decoder := json.NewDecoder(response.Body)
@@ -380,7 +379,7 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve default plan")
 	}
-	defer util.DiscardClose(response)
+	defer discardClose(response)
 
 	if response.StatusCode != http.StatusOK {
 		decoder := json.NewDecoder(response.Body)
@@ -419,7 +418,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve matching plans")
 	}
-	defer util.DiscardClose(response)
+	defer discardClose(response)
 
 	if response.StatusCode != http.StatusOK {
 		decoder := json.NewDecoder(response.Body)
@@ -441,4 +440,12 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 		return nil, errors.Annotatef(err, "failed to unmarshal the response")
 	}
 	return &plan, nil
+}
+
+func discardClose(response *http.Response) {
+	if response == nil || response.Body == nil {
+		return
+	}
+	io.Copy(ioutil.Discard, response.Body)
+	response.Body.Close()
 }
