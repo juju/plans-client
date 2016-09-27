@@ -4,6 +4,7 @@ package cmd_test
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/juju/cmd/cmdtesting"
 	"github.com/juju/testing"
@@ -132,7 +133,7 @@ type mockCharmResolver struct {
 }
 
 // Resolve implements cmd.CharmResolver.
-func (r *mockCharmResolver) Resolve(_ *http.Client, charmURL string) (string, error) {
+func (r *mockCharmResolver) Resolve(_ *http.Client, _ func(url *url.URL) error, charmURL string) (string, error) {
 	r.AddCall("Resolve", charmURL)
 	if r.ResolvedURL != "" {
 		return r.ResolvedURL, r.NextErr()
@@ -140,7 +141,7 @@ func (r *mockCharmResolver) Resolve(_ *http.Client, charmURL string) (string, er
 	return charmURL, r.NextErr()
 }
 
-func (r *mockCharmResolver) Metrics(_ *http.Client, charmURL string) ([]string, error) {
+func (r *mockCharmResolver) Metrics(_ *http.Client, _ func(url *url.URL) error, charmURL string) ([]string, error) {
 	r.AddCall("Resolve", charmURL)
 	if r.CharmMetrics != nil {
 		return r.CharmMetrics, r.NextErr()

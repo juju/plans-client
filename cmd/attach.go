@@ -80,7 +80,7 @@ func (c *AttachCommand) Init(args []string) error {
 	if err != nil {
 		return errors.Annotate(err, "could not create API client")
 	}
-	resolved, err := c.CharmResolver.Resolve(client.Client, charmURL)
+	resolved, err := c.CharmResolver.Resolve(client.Client, client.VisitWebPage, charmURL)
 	if err != nil {
 		return errors.Annotate(err, "could not resolve charm url")
 	}
@@ -117,7 +117,7 @@ func (c *AttachCommand) Run(ctx *cmd.Context) error {
 	if err != nil {
 		return errors.Trace(err)
 	}
-	charmMetricNames, err := c.CharmResolver.Metrics(client.Client, c.CharmURL)
+	charmMetricNames, err := c.CharmResolver.Metrics(client.Client, client.VisitWebPage, c.CharmURL)
 	if err != nil {
 		return errors.Trace(err)
 	}
