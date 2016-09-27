@@ -12,7 +12,6 @@ import (
 	"github.com/juju/idmclient/ussologin"
 	"github.com/juju/juju/juju/osenv"
 	"github.com/juju/juju/jujuclient"
-	"github.com/juju/persistent-cookiejar"
 	"gopkg.in/juju/environschema.v1/form"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
 	"launchpad.net/gnuflag"
@@ -36,7 +35,6 @@ type baseCommand struct {
 	cmd.CommandBase
 
 	ServiceURL string
-	cookiejar  *cookiejar.Jar
 }
 
 // NewClient returns a new http bakery client for Omnibus commands.
@@ -62,9 +60,6 @@ func (s *baseCommand) NewClient() (*httpbakery.Client, error) {
 
 // Close saves the persistent cookie jar used by the specified httpbakery.Client.
 func (s *baseCommand) Close() error {
-	if s.cookiejar != nil {
-		return s.cookiejar.Save()
-	}
 	return nil
 }
 
