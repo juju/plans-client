@@ -92,7 +92,7 @@ func (*suite) TestPlanURLParsing(c *gc.C) {
 		url: "bad owner",
 		err: "invalid plan owner.*",
 	}, {
-		url: "not an/ owner/plan",
+		url: "not an/ owner/17/plan",
 		err: `invalid plan url format`,
 	}, {
 		url: "owner/not a valid plan",

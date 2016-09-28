@@ -84,14 +84,14 @@ func (s *clientIntegrationSuite) TestRelease(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 	s.httpClient.body = p
 
-	plan, err := s.planClient.Release("testisv/default")
+	plan, err := s.planClient.Release("testisv/default/1")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(plan, gc.DeepEquals, &p)
-	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/release", nil)
+	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/1/release", nil)
 }
 
 func (s *clientIntegrationSuite) TestReleaseInvalidPlanURL(c *gc.C) {
-	_, err := s.planClient.Release("invalid/format/testisv/default")
+	_, err := s.planClient.Release("invalid/format/testisv/0/default")
 	c.Assert(err, gc.ErrorMatches, "invalid plan url format")
 }
 
@@ -105,7 +105,7 @@ func (s *clientIntegrationSuite) TestReleaseFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.Release("testisv/default")
+	_, err := s.planClient.Release("testisv/default/1")
 	c.Assert(err, gc.ErrorMatches, `failed to release the plan: silly error \[bad request\]`)
 }
 

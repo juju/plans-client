@@ -89,7 +89,10 @@ func (c *client) Release(planURL string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/release", c.plansService, pURL.Owner, pURL.Name))
+	if pURL.Revision == 0 {
+		return nil, errors.New("must specify the plan revision")
+	}
+	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/%d/release", c.plansService, pURL.Owner, pURL.Name, pURL.Revision))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}

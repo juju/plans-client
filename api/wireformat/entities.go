@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,6 +70,12 @@ func ParsePlanURL(name string) (*PlanURL, error) {
 		u = &PlanURL{Owner: name}
 	case 2:
 		u = &PlanURL{Owner: tokens[0], Name: tokens[1]}
+	case 3:
+		revision, err := strconv.Atoi(tokens[2])
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to parse the plan revision")
+		}
+		u = &PlanURL{Owner: tokens[0], Name: tokens[1], Revision: revision}
 	default:
 		return nil, errors.New("invalid plan url format")
 	}
@@ -80,8 +87,9 @@ func ParsePlanURL(name string) (*PlanURL, error) {
 
 // PlanURL holds the components of a plan url.
 type PlanURL struct {
-	Owner string
-	Name  string
+	Owner    string
+	Name     string
+	Revision int
 }
 
 // Incomplete reports whether the plan url only specifies the owner.
@@ -91,7 +99,10 @@ func (u PlanURL) Incomplete() bool {
 
 // String outputs the plan URL in a canonical form.
 func (u PlanURL) String() string {
-	return fmt.Sprintf("%s/%s", u.Owner, u.Name)
+	if u.Revision == 0 {
+		return fmt.Sprintf("%s/%s", u.Owner, u.Name)
+	}
+	return fmt.Sprintf("%s/%s/%d", u.Owner, u.Name, u.Revision)
 }
 
 // Validate validates the plan URL.
