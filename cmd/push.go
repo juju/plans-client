@@ -96,11 +96,11 @@ func (c *PushCommand) Run(ctx *cmd.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to create a plan API client")
 	}
-	err = apiClient.Save(c.PlanURL, string(data))
+	plan, err := apiClient.Save(c.PlanURL, string(data))
 	if err != nil {
 		return errors.Annotate(err, "failed to save the plan")
 	}
 
-	fmt.Fprintf(ctx.Stdout, "saved as plan: %v\n", c.PlanURL)
+	fmt.Fprintf(ctx.Stdout, "%v\n", plan.Id)
 	return nil
 }

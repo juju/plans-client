@@ -21,7 +21,7 @@ import (
 // PlanClient defines the interface available to clients of the plan api.
 type PlanClient interface {
 	// Save uploads a new plan to the plans service.
-	Save(planURL, definition string) error
+	Save(planURL, definition string) (*wireformat.Plan, error)
 	// AddCharm associates a charm with the specified plan.
 	AddCharm(planURL string, charmURL string, isDefault bool) error
 	// Get returns a slice of Plans that match the stated criteria, namely
@@ -192,30 +192,29 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 
 // Save stores the rating plan definition (definition - plan definition yaml) under a
 // specified name (planURL).
-func (c *client) Save(planURL string, definition string) error {
+func (c *client) Save(planURL string, definition string) (*wireformat.Plan, error) {
 	u, err := url.Parse(c.plansService + "/p")
 	if err != nil {
-		return errors.Trace(err)
+		return nil, errors.Trace(err)
 	}
 	plan := wireformat.Plan{URL: planURL, Definition: definition}
 
 	payload := &bytes.Buffer{}
 	err = json.NewEncoder(payload).Encode(plan)
 	if err != nil {
-		return errors.Annotate(err, "failed to marshal the plan structure")
+		return nil, errors.Annotate(err, "failed to marshal the plan structure")
 	}
 
 	req, err := http.NewRequest("POST", u.String(), nil)
 	if err != nil {
-		return errors.Annotate(err, "failed to create a POST request")
+		return nil, errors.Annotate(err, "failed to create a POST request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(payload.Bytes()))
 	if err != nil {
-		return errors.Annotate(err, "failed to store the plan")
+		return nil, errors.Annotate(err, "failed to store the plan")
 	}
-	defer discardClose(response)
 
 	if response.StatusCode != http.StatusOK {
 		decoder := json.NewDecoder(response.Body)
@@ -225,11 +224,19 @@ func (c *client) Save(planURL string, definition string) error {
 		}
 		err = decoder.Decode(&e)
 		if err != nil {
-			return errors.Annotatef(err, "failed to store the plan")
+			return nil, errors.Annotatef(err, "failed to store the plan")
 		}
-		return errors.Errorf("failed to store the plan: %v [%v]", e.Message, e.Code)
+		return nil, errors.Errorf("failed to store the plan: %v [%v]", e.Message, e.Code)
 	}
-	return nil
+
+	var planResult wireformat.Plan
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&planResult)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	return &planResult, nil
 }
 
 // AddCharm adds the specified charm to all plans matching the criteria.
