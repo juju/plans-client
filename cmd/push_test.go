@@ -49,7 +49,7 @@ func (s *pushSuite) TestCommand(c *gc.C) {
 	}, {
 		about:   "everything works",
 		args:    []string{"example.yaml", "testisv/default", "--url", "localhost:0"},
-		stdout:  "saved as plan: testisv/default\n",
+		stdout:  "testisv/default/17\n",
 		apiCall: []interface{}{"testisv/default", plantesting.TestPlan},
 	},
 	}

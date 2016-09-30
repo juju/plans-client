@@ -63,9 +63,14 @@ func (m *MockPlanClient) Suspend(planURL string, all bool, charmURLs ...string) 
 }
 
 // Save stores the plan in the mock.
-func (m *MockPlanClient) Save(planURL, definition string) error {
+func (m *MockPlanClient) Save(planURL, definition string) (*wireformat.Plan, error) {
 	m.MethodCall(m, "Save", planURL, definition)
-	return m.NextErr()
+	return &wireformat.Plan{
+		Id:         "testisv/default/17",
+		URL:        "testisv/default",
+		Definition: TestPlan,
+		CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+	}, m.NextErr()
 }
 
 // AddCharm adds a charm to an existing plan

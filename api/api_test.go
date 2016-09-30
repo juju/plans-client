@@ -52,9 +52,14 @@ func (s *clientIntegrationSuite) SetUpTest(c *gc.C) {
 
 func (s *clientIntegrationSuite) TestSave(c *gc.C) {
 	s.httpClient.status = http.StatusOK
+	s.httpClient.body = wireformat.Plan{
+		Id:  "testisv/default/1",
+		URL: "testisv/default",
+	}
 
-	err := s.planClient.Save("testisv/default", testPlan)
+	plan, err := s.planClient.Save("testisv/default", testPlan)
 	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(plan.Id, gc.Equals, "testisv/default/1")
 
 	s.httpClient.assertRequest(c, "POST", "/p", wireformat.Plan{
 		URL:        "testisv/default",
@@ -72,7 +77,7 @@ func (s *clientIntegrationSuite) TestSaveFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	err := s.planClient.Save("testisv/default", testPlan)
+	_, err := s.planClient.Save("testisv/default", testPlan)
 	c.Assert(err, gc.ErrorMatches, `failed to store the plan: silly error \[bad request\]`)
 }
 
