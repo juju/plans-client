@@ -185,7 +185,7 @@ func formatTabular(value interface{}) ([]byte, error) {
 	table.AddRow("", plan.Created.User, plan.Created.Time)
 	if plan.Released != nil {
 		table.AddRow("", "RELEASED BY", "TIME")
-		table.AddRow("", plan.Created.User, plan.Created.Time)
+		table.AddRow("", plan.Released.User, plan.Released.Time)
 	}
 	if plan.PlanDescription != "" {
 		table.AddRow("", "DESCRIPTION", plan.PlanDescription)

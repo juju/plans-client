@@ -1,4 +1,4 @@
-// Copyright 2016 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.  All rights reserved.
 
 package cmd_test
 
@@ -39,31 +39,31 @@ func (s *showSuite) SetUpTest(c *gc.C) {
 }
 
 func (s *showSuite) TestCommand(c *gc.C) {
-	t := time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC)
+	t := time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC)
 	p := &wireformat.PlanDetails{
 		Plan: wireformat.Plan{
 			URL:             "testisv/default",
 			Definition:      plantesting.TestPlan,
-			CreatedOn:       time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+			CreatedOn:       time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 			PlanDescription: "a test plan",
 			PlanPrice:       "a test plan price description",
 		},
 		Created: wireformat.Event{
 			User: "jane.jaas",
 			Type: "create",
-			Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+			Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 		},
 		Released: &wireformat.Event{
-			User: "jane.jaas",
+			User: "john.jaas",
 			Type: "release",
-			Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+			Time: time.Date(2016, 1, 1, 1, 0, 0, 0, time.UTC),
 		},
 		Charms: []wireformat.CharmPlanDetail{{
 			CharmURL: "cs:~testisv/charm1-0",
 			Attached: wireformat.Event{
 				User: "jane.jaas",
 				Type: "create",
-				Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+				Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 			},
 			Default: false,
 		}, {
@@ -71,14 +71,14 @@ func (s *showSuite) TestCommand(c *gc.C) {
 			Attached: wireformat.Event{
 				User: "joe.jaas",
 				Type: "create",
-				Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+				Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 			},
 			EffectiveSince: &t,
 			Default:        true,
 			Events: []wireformat.Event{{
 				User: "eve.jaas",
 				Type: "suspend",
-				Time: time.Date(2015, 0, 0, 1, 2, 3, 0, time.UTC),
+				Time: time.Date(2015, 1, 1, 1, 2, 3, 0, time.UTC),
 			}},
 		}},
 	}
@@ -144,17 +144,17 @@ func (s *showSuite) TestCommand(c *gc.C) {
 			c.Assert(output, gc.Equals, `PLAN                
 testisv/default     
                     	 CREATED BY	                         TIME
-                    	  jane.jaas	2014-11-30 00:00:00 +0000 UTC
+                    	  jane.jaas	2015-01-01 01:00:00 +0000 UTC
                     	RELEASED BY	                         TIME
-                    	  jane.jaas	2014-11-30 00:00:00 +0000 UTC
+                    	  john.jaas	2016-01-01 01:00:00 +0000 UTC
 CHARMS              
 CHARM               	ATTACHED BY	                         TIME	DEFAULT	                             
-cs:~testisv/charm1-0	  jane.jaas	2014-11-30 00:00:00 +0000 UTC	  false	                             
+cs:~testisv/charm1-0	  jane.jaas	2015-01-01 01:00:00 +0000 UTC	  false	                             
 CHARM               	ATTACHED BY	                         TIME	DEFAULT	              EFFECTIVE SINCE
-cs:~testisv/charm2-1	   joe.jaas	2014-11-30 00:00:00 +0000 UTC	   true	2014-11-30 00:00:00 +0000 UTC
+cs:~testisv/charm2-1	   joe.jaas	2015-01-01 01:00:00 +0000 UTC	   true	2015-01-01 01:00:00 +0000 UTC
                     	     EVENTS
                     	           	                           BY	   TYPE	                         TIME
-                    	           	                     eve.jaas	suspend	2014-11-30 01:02:03 +0000 UTC
+                    	           	                     eve.jaas	suspend	2015-01-01 01:02:03 +0000 UTC
 `)
 		},
 		assertCalls: func(stub *testing.Stub) {
@@ -167,9 +167,9 @@ cs:~testisv/charm2-1	   joe.jaas	2014-11-30 00:00:00 +0000 UTC	   true	2014-11-3
 			c.Assert(output, gc.Equals, `PLAN                
 testisv/default     
                     	 CREATED BY	                                              TIME
-                    	  jane.jaas	                     2014-11-30 00:00:00 +0000 UTC
+                    	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC
                     	RELEASED BY	                                              TIME
-                    	  jane.jaas	                     2014-11-30 00:00:00 +0000 UTC
+                    	  john.jaas	                     2016-01-01 01:00:00 +0000 UTC
                     	DESCRIPTION	                                       a test plan
                     	      PRICE	                     a test plan price description
                     	 DEFINITION	                                                  
@@ -189,12 +189,12 @@ testisv/default
                     	           	                                                  
 CHARMS              
 CHARM               	ATTACHED BY	                                              TIME	DEFAULT	                             
-cs:~testisv/charm1-0	  jane.jaas	                     2014-11-30 00:00:00 +0000 UTC	  false	                             
+cs:~testisv/charm1-0	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC	  false	                             
 CHARM               	ATTACHED BY	                                              TIME	DEFAULT	              EFFECTIVE SINCE
-cs:~testisv/charm2-1	   joe.jaas	                     2014-11-30 00:00:00 +0000 UTC	   true	2014-11-30 00:00:00 +0000 UTC
+cs:~testisv/charm2-1	   joe.jaas	                     2015-01-01 01:00:00 +0000 UTC	   true	2015-01-01 01:00:00 +0000 UTC
                     	     EVENTS
                     	           	                                                BY	   TYPE	                         TIME
-                    	           	                                          eve.jaas	suspend	2014-11-30 01:02:03 +0000 UTC
+                    	           	                                          eve.jaas	suspend	2015-01-01 01:02:03 +0000 UTC
 `)
 		},
 		assertCalls: func(stub *testing.Stub) {
@@ -234,14 +234,14 @@ func (s *showSuite) TestCommandWithUnreleasedPlan(c *gc.C) {
 		Plan: wireformat.Plan{
 			URL:             "testisv/default",
 			Definition:      plantesting.TestPlan,
-			CreatedOn:       time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+			CreatedOn:       time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 			PlanDescription: "a test plan",
 			PlanPrice:       "a test plan price description",
 		},
 		Created: wireformat.Event{
 			User: "jane.jaas",
 			Type: "create",
-			Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+			Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 		},
 	}
 
@@ -296,7 +296,7 @@ func (s *showSuite) TestCommandWithUnreleasedPlan(c *gc.C) {
 			c.Assert(output, gc.Equals, `PLAN           
 testisv/default
                	CREATED BY	                         TIME
-               	 jane.jaas	2014-11-30 00:00:00 +0000 UTC
+               	 jane.jaas	2015-01-01 01:00:00 +0000 UTC
 `)
 		},
 		assertCalls: func(stub *testing.Stub) {
@@ -309,7 +309,7 @@ testisv/default
 			c.Assert(output, gc.Equals, `PLAN           
 testisv/default
                	 CREATED BY	                                              TIME
-               	  jane.jaas	                     2014-11-30 00:00:00 +0000 UTC
+               	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC
                	DESCRIPTION	                                       a test plan
                	      PRICE	                     a test plan price description
                	 DEFINITION	                                                  
