@@ -326,24 +326,24 @@ func (s *clientIntegrationSuite) TestGetPlanDetails(c *gc.C) {
 		Plan: wireformat.Plan{
 			URL:        "testisv/default",
 			Definition: testPlan,
-			CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+			CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 		},
 		Created: wireformat.Event{
 			User: "jane.jaas",
 			Type: "create",
-			Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+			Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 		},
 		Released: &wireformat.Event{
 			User: "jane.jaas",
 			Type: "release",
-			Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+			Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 		},
 		Charms: []wireformat.CharmPlanDetail{{
 			CharmURL: "cs:~testisv/charm1-0",
 			Attached: wireformat.Event{
 				User: "jane.jaas",
 				Type: "create",
-				Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+				Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 			},
 			Default: false,
 		}},
@@ -355,6 +355,43 @@ func (s *clientIntegrationSuite) TestGetPlanDetails(c *gc.C) {
 	c.Assert(details, gc.DeepEquals, &p)
 
 	s.httpClient.assertRequest(c, "GET", "/p/testisv/default/details", nil)
+}
+
+func (s *clientIntegrationSuite) TestGetPlanDetailsRevision(c *gc.C) {
+	s.httpClient.status = http.StatusOK
+	p := wireformat.PlanDetails{
+		Plan: wireformat.Plan{
+			URL:        "testisv/default",
+			Definition: testPlan,
+			CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		},
+		Created: wireformat.Event{
+			User: "jane.jaas",
+			Type: "create",
+			Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
+		},
+		Released: &wireformat.Event{
+			User: "jane.jaas",
+			Type: "release",
+			Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
+		},
+		Charms: []wireformat.CharmPlanDetail{{
+			CharmURL: "cs:~testisv/charm1-0",
+			Attached: wireformat.Event{
+				User: "jane.jaas",
+				Type: "create",
+				Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
+			},
+			Default: false,
+		}},
+	}
+	s.httpClient.body = p
+
+	details, err := s.planClient.GetPlanDetails("testisv/default/7")
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(details, gc.DeepEquals, &p)
+
+	s.httpClient.assertRequest(c, "GET", "/p/testisv/default/details?revision=7", nil)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanDetailsFail(c *gc.C) {
@@ -369,6 +406,21 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsFail(c *gc.C) {
 
 	_, err := s.planClient.GetPlanDetails("testisv/default")
 	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details: silly error \[bad request\]`)
+}
+
+func (s *clientIntegrationSuite) TestGetPlanDetailsNotFound(c *gc.C) {
+	s.httpClient.status = http.StatusNotFound
+	s.httpClient.body = struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}{
+		Code:    "not found",
+		Message: "silly error",
+	}
+
+	_, err := s.planClient.GetPlanDetails("testisv/default")
+	c.Assert(err, gc.ErrorMatches, "testisv/default not found")
+	c.Assert(errors.IsNotFound(err), jc.IsTrue)
 }
 
 type mockHttpClient struct {

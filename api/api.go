@@ -114,7 +114,7 @@ func (c *client) Release(planURL string) (*wireformat.Plan, error) {
 		decoder := json.NewDecoder(response.Body)
 		err = decoder.Decode(&e)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to release the plan")
+			return nil, errors.Errorf("failed to release the plan: server response %v", response.Status)
 		}
 		return nil, errors.Errorf("failed to release the plan: %v [%v]", e.Message, e.Code)
 	}
@@ -224,7 +224,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 		}
 		err = decoder.Decode(&e)
 		if err != nil {
-			return nil, errors.Annotatef(err, "failed to store the plan")
+			return nil, errors.Errorf("failed to store the plan: server response %v", response.Status)
 		}
 		return nil, errors.Errorf("failed to store the plan: %v [%v]", e.Message, e.Code)
 	}
@@ -283,7 +283,7 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 		}
 		err = decoder.Decode(&e)
 		if err != nil {
-			return errors.Annotatef(err, "failed to update the plan")
+			return errors.Errorf("failed to update the plan: server response %v", response.Status)
 		}
 		return errors.Errorf("failed to update the plan: %v [%v]", e.Message, e.Code)
 	}
@@ -316,7 +316,7 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 		}
 		err = decoder.Decode(&e)
 		if err != nil {
-			return nil, errors.Annotatef(err, "failed to retrieve matching plans")
+			return nil, errors.Errorf("failed to retrieve matching plans: server response %v", response.Status)
 		}
 		return nil, errors.Errorf("failed to retrieve matching plans: %v [%v]", e.Message, e.Code)
 	}
@@ -358,7 +358,7 @@ func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
 		}
 		err = decoder.Decode(&e)
 		if err != nil {
-			return nil, errors.Annotatef(err, "failed to retrieve default plan")
+			return nil, errors.Errorf("failed to retrieve default plan: server response %v", response.Status)
 		}
 		return nil, errors.Errorf("failed to retrieve default plan: %v [%v]", e.Message, e.Code)
 	}
@@ -399,7 +399,7 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 		}
 		err = decoder.Decode(&e)
 		if err != nil {
-			return nil, errors.Annotatef(err, "failed to retrieve associated plans")
+			return nil, errors.Errorf("failed to retrieve associated plans: server response %v", response.Status)
 		}
 		return nil, errors.Errorf("failed to retrieve associated plans: %v [%v]", e.Message, e.Code)
 	}
@@ -414,10 +414,20 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 
 // GetPlanDetailes returns detailed information about a plan.
 func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error) {
-	u, err := url.Parse(c.plansService + "/p/" + planURL + "/details")
+	query := url.Values{}
+	purl, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
+	if purl.Revision != 0 {
+		query.Add("revision", fmt.Sprintf("%d", purl.Revision))
+	}
+
+	u, err := url.Parse(c.plansService + "/p/" + purl.StringNoRevision() + "/details")
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	u.RawQuery = query.Encode()
 
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
@@ -438,7 +448,10 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 		}
 		err = decoder.Decode(&e)
 		if err != nil {
-			return nil, errors.Annotatef(err, "failed to retrieve plan details")
+			return nil, errors.Errorf("failed to retrieve plan details: server response %v", response.Status)
+		}
+		if response.StatusCode == http.StatusNotFound {
+			return nil, errors.NotFoundf(planURL)
 		}
 		return nil, errors.Errorf("failed to retrieve plan details: %v [%v]", e.Message, e.Code)
 	}

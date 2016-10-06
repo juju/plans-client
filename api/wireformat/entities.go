@@ -106,6 +106,11 @@ func (u PlanURL) String() string {
 	return fmt.Sprintf("%s/%s/%d", u.Owner, u.Name, u.Revision)
 }
 
+// StringNoRevision outputs the plan URL in a canonical revisionless form.
+func (u PlanURL) StringNoRevision() string {
+	return fmt.Sprintf("%s/%s", u.Owner, u.Name)
+}
+
 // Validate validates the plan URL.
 func (u PlanURL) Validate() error {
 	if !planURLComponentRe.MatchString(u.Owner) {

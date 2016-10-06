@@ -107,7 +107,7 @@ func (c *ShowCommand) Run(ctx *cmd.Context) error {
 
 func fromWire(showContent bool, plan *wireformat.PlanDetails) *planDetails {
 	p := planDetails{
-		ID:      plan.Plan.URL,
+		ID:      plan.Plan.Id,
 		Created: eventFromWire(plan.Created),
 		Charms:  make([]charmDetails, len(plan.Charms)),
 	}
