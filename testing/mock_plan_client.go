@@ -45,7 +45,7 @@ func (m *MockPlanClient) Release(planURL string) (*wireformat.Plan, error) {
 	p := &wireformat.Plan{
 		URL:        "testisv/default",
 		Definition: TestPlan,
-		CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 	}
 	return p, m.NextErr()
 }
@@ -69,7 +69,7 @@ func (m *MockPlanClient) Save(planURL, definition string) (*wireformat.Plan, err
 		Id:         "testisv/default/17",
 		URL:        "testisv/default",
 		Definition: TestPlan,
-		CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 	}, m.NextErr()
 }
 
@@ -84,7 +84,7 @@ func (m *MockPlanClient) GetDefaultPlan(charmURL string) (*wireformat.Plan, erro
 	p := &wireformat.Plan{
 		URL:        "testisv/default",
 		Definition: TestPlan,
-		CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 	}
 	return p, m.NextErr()
 }
@@ -94,7 +94,7 @@ func (m *MockPlanClient) GetPlansForCharm(charmURL string) ([]wireformat.Plan, e
 	p := []wireformat.Plan{{
 		URL:        "testisv/default",
 		Definition: TestPlan,
-		CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 	}}
 	return p, m.NextErr()
 }
@@ -105,7 +105,7 @@ func (m *MockPlanClient) Get(planURL string) ([]wireformat.Plan, error) {
 	p := wireformat.Plan{
 		URL:        planURL,
 		Definition: TestPlan,
-		CreatedOn:  time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 	}
 	return []wireformat.Plan{p}, nil
 }
@@ -116,31 +116,31 @@ func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails
 	if m.PlanDetails != nil {
 		return m.PlanDetails, m.NextErr()
 	} else {
-		t := time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC)
+		t := time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC)
 		return &wireformat.PlanDetails{
 			Plan: wireformat.Plan{
 				URL:             planURL,
 				Definition:      TestPlan,
-				CreatedOn:       time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+				CreatedOn:       time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 				PlanDescription: "a test plan",
 				PlanPrice:       "a test plan price description",
 			},
 			Created: wireformat.Event{
 				User: "jane.jaas",
 				Type: "create",
-				Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+				Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 			},
 			Released: &wireformat.Event{
-				User: "jane.jaas",
+				User: "john.jaas",
 				Type: "release",
-				Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+				Time: time.Date(2016, 1, 1, 1, 0, 0, 0, time.UTC),
 			},
 			Charms: []wireformat.CharmPlanDetail{{
 				CharmURL: "cs:~testisv/charm1-0",
 				Attached: wireformat.Event{
 					User: "jane.jaas",
 					Type: "create",
-					Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+					Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 				},
 				Default: false,
 			}, {
@@ -148,14 +148,14 @@ func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails
 				Attached: wireformat.Event{
 					User: "joe.jaas",
 					Type: "create",
-					Time: time.Date(2015, 0, 0, 0, 0, 0, 0, time.UTC),
+					Time: time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC),
 				},
 				EffectiveSince: &t,
 				Default:        true,
 				Events: []wireformat.Event{{
 					User: "eve.jaas",
 					Type: "suspend",
-					Time: time.Date(2015, 0, 0, 1, 2, 3, 0, time.UTC),
+					Time: time.Date(2015, 1, 1, 1, 2, 3, 0, time.UTC),
 				}},
 			}},
 		}, m.NextErr()
