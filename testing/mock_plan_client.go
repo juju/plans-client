@@ -119,6 +119,7 @@ func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails
 		t := time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC)
 		return &wireformat.PlanDetails{
 			Plan: wireformat.Plan{
+				Id:              planURL + "/1", //TODO (mattyw) Not ideal.
 				URL:             planURL,
 				Definition:      TestPlan,
 				CreatedOn:       time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),

@@ -42,6 +42,7 @@ func (s *showSuite) TestCommand(c *gc.C) {
 	t := time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC)
 	p := &wireformat.PlanDetails{
 		Plan: wireformat.Plan{
+			Id:              "testisv/default/1",
 			URL:             "testisv/default",
 			Definition:      plantesting.TestPlan,
 			CreatedOn:       time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
@@ -142,7 +143,7 @@ func (s *showSuite) TestCommand(c *gc.C) {
 		args:  []string{"testisv/default"},
 		assertStdout: func(c *gc.C, output string) {
 			c.Assert(output, gc.Equals, `PLAN                
-testisv/default     
+testisv/default/1   
                     	 CREATED BY	                         TIME
                     	  jane.jaas	2015-01-01 01:00:00 +0000 UTC
                     	RELEASED BY	                         TIME
@@ -165,7 +166,7 @@ cs:~testisv/charm2-1	   joe.jaas	2015-01-01 01:00:00 +0000 UTC	   true	2015-01-0
 		args:  []string{"testisv/default", "--content"},
 		assertStdout: func(c *gc.C, output string) {
 			c.Assert(output, gc.Equals, `PLAN                
-testisv/default     
+testisv/default/1   
                     	 CREATED BY	                                              TIME
                     	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC
                     	RELEASED BY	                                              TIME
@@ -232,6 +233,7 @@ cs:~testisv/charm2-1	   joe.jaas	                     2015-01-01 01:00:00 +0000 
 func (s *showSuite) TestCommandWithUnreleasedPlan(c *gc.C) {
 	p := &wireformat.PlanDetails{
 		Plan: wireformat.Plan{
+			Id:              "testisv/default/1",
 			URL:             "testisv/default",
 			Definition:      plantesting.TestPlan,
 			CreatedOn:       time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
@@ -293,10 +295,10 @@ func (s *showSuite) TestCommandWithUnreleasedPlan(c *gc.C) {
 		about: "everything works - tabular",
 		args:  []string{"testisv/default"},
 		assertStdout: func(c *gc.C, output string) {
-			c.Assert(output, gc.Equals, `PLAN           
-testisv/default
-               	CREATED BY	                         TIME
-               	 jane.jaas	2015-01-01 01:00:00 +0000 UTC
+			c.Assert(output, gc.Equals, `PLAN             
+testisv/default/1
+                 	CREATED BY	                         TIME
+                 	 jane.jaas	2015-01-01 01:00:00 +0000 UTC
 `)
 		},
 		assertCalls: func(stub *testing.Stub) {
@@ -306,27 +308,27 @@ testisv/default
 		about: "everything works - tabular - content",
 		args:  []string{"testisv/default", "--content"},
 		assertStdout: func(c *gc.C, output string) {
-			c.Assert(output, gc.Equals, `PLAN           
-testisv/default
-               	 CREATED BY	                                              TIME
-               	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC
-               	DESCRIPTION	                                       a test plan
-               	      PRICE	                     a test plan price description
-               	 DEFINITION	                                                  
-               	           	# Copyright 2014 Canonical Ltd.  All rights       
-               	           	reserved.                                         
-               	           	    description:                                  
-               	           	        price: 10USD per unit/month               
-               	           	        text: |                                   
-               	           	           This is a test plan.                   
-               	           	    metrics:                                      
-               	           	      active-users:                               
-               	           	        unit:                                     
-               	           	          transform: max                          
-               	           	          period: hour                            
-               	           	          gaps: zero                              
-               	           	        price: 0.01                               
-               	           	                                                  
+			c.Assert(output, gc.Equals, `PLAN             
+testisv/default/1
+                 	 CREATED BY	                                              TIME
+                 	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC
+                 	DESCRIPTION	                                       a test plan
+                 	      PRICE	                     a test plan price description
+                 	 DEFINITION	                                                  
+                 	           	# Copyright 2014 Canonical Ltd.  All rights       
+                 	           	reserved.                                         
+                 	           	    description:                                  
+                 	           	        price: 10USD per unit/month               
+                 	           	        text: |                                   
+                 	           	           This is a test plan.                   
+                 	           	    metrics:                                      
+                 	           	      active-users:                               
+                 	           	        unit:                                     
+                 	           	          transform: max                          
+                 	           	          period: hour                            
+                 	           	          gaps: zero                              
+                 	           	        price: 0.01                               
+                 	           	                                                  
 `)
 		},
 		assertCalls: func(stub *testing.Stub) {
