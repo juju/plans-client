@@ -1,11 +1,11 @@
-name: charm
+name: charm-partner
 version: 2.2
-summary: charm and charm-tools
-description: charmstore-client and charm-tools
+summary: charm and charm-tools for partners
+description: charmstore-client and charm-tools for partners
 confinement: strict
 
 apps:
-  charm:
+  charm-partner:
     command: env PREFIX=$SNAP GIT_EXEC_PATH=$SNAP/usr/lib/git-core LC_ALL=C.UTF-8 $SNAP/bin/charm
     plugs: [network, network-bind, home]
 
@@ -21,6 +21,12 @@ parts:
     go-importpath: github.com/juju/terms-client
     source: https://github.com/juju/terms-client.git
     source-tag: v1.0.1
+    source-type: git
+  charm-plans:
+    plugin: godeps
+    go-importpath: github.com/CanonicalLtd/plans-client
+    source: .
+    source-tag: master
     source-type: git
   charm-tools:
     plugin: python2
