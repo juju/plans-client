@@ -53,13 +53,14 @@ type PlanActive struct {
 // Plan structure is used as a wire format to store information on ISV-created
 // rating plan and charm URLs for which the plan is valid.
 type Plan struct {
-	Id              string `json:"id"`         // Full id of the plan format
-	URL             string `json:"url"`        // Name of the rating plan
-	Definition      string `json:"plan"`       // The rating plan source
-	CreatedOn       string `json:"created-on"` // When the plan was created - RFC3339 encoded timestamp
-	PlanDescription string `json:"description"`
-	PlanPrice       string `json:"price"`
-	Released        bool   `json:"released"`
+	Id              string     `json:"id"`         // Full id of the plan format
+	URL             string     `json:"url"`        // Name of the rating plan
+	Definition      string     `json:"plan"`       // The rating plan source
+	CreatedOn       string     `json:"created-on"` // When the plan was created - RFC3339 encoded timestamp
+	PlanDescription string     `json:"description"`
+	PlanPrice       string     `json:"price"`
+	Released        bool       `json:"released"`
+	EffectiveTime   *time.Time `json:"effective-time,omitempty"`
 }
 
 // ParsePlanURL returns the plan's owner and name.
