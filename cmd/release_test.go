@@ -44,9 +44,11 @@ func (s *releaseSuite) TestReleaseCommand(c *gc.C) {
 		args:  []string{"testisv/default", "foobar"},
 		err:   `unknown command line arguments: foobar`,
 	}, {
-		about:   "everything works",
-		args:    []string{"testisv/default", "--url", "localhost:0"},
-		stdout:  "testisv/default\n",
+		about: "everything works",
+		args:  []string{"testisv/default", "--url", "localhost:0"},
+		stdout: `testisv/default/1
+effective from 01 Jan 16 01:00 UTC
+`,
 		apiCall: []interface{}{"testisv/default"},
 	},
 	}

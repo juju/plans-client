@@ -42,10 +42,14 @@ func NewMockPlanClient() *MockPlanClient {
 // Release releases the specified plan.
 func (m *MockPlanClient) Release(planURL string) (*wireformat.Plan, error) {
 	m.MethodCall(m, "Release", planURL)
+	et := time.Date(2016, 1, 1, 1, 0, 0, 0, time.UTC)
 	p := &wireformat.Plan{
-		URL:        "testisv/default",
-		Definition: TestPlan,
-		CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		Id:            "testisv/default/1",
+		URL:           "testisv/default",
+		Definition:    TestPlan,
+		CreatedOn:     time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		Released:      true,
+		EffectiveTime: &et,
 	}
 	return p, m.NextErr()
 }

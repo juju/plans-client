@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/juju/cmd"
 	"github.com/juju/errors"
@@ -74,11 +75,14 @@ func (c *ReleaseCommand) Run(ctx *cmd.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to create a plan API client")
 	}
-	_, err = apiClient.Release(c.Plan)
+	plan, err := apiClient.Release(c.Plan)
 	if err != nil {
 		return errors.Trace(err)
 	}
+	fmt.Fprintln(ctx.Stderr, plan.Id)
+	if plan.EffectiveTime != nil {
+		fmt.Fprintf(ctx.Stderr, "effective from %v\n", plan.EffectiveTime.Format(time.RFC822))
+	}
 
-	fmt.Fprintln(ctx.Stderr, c.Plan)
 	return nil
 }
