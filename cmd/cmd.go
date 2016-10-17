@@ -14,7 +14,7 @@ import (
 	"github.com/juju/juju/jujuclient"
 	"gopkg.in/juju/environschema.v1/form"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
-	"launchpad.net/gnuflag"
+	"github.com/juju/gnuflag"
 )
 
 var (

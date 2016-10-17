@@ -3,13 +3,14 @@
 package cmd
 
 import (
+	"io"
 	"strings"
 	"time"
 
 	"github.com/gosuri/uitable"
 	"github.com/juju/cmd"
 	"github.com/juju/errors"
-	"launchpad.net/gnuflag"
+	"github.com/juju/gnuflag"
 
 	"github.com/CanonicalLtd/plans-client/api/wireformat"
 )
@@ -167,10 +168,10 @@ func eventFromWire(event wireformat.Event) eventDetails {
 	}
 }
 
-func formatTabular(value interface{}) ([]byte, error) {
+func formatTabular(w io.Writer, value interface{}) error {
 	plan, ok := value.(*planDetails)
 	if !ok {
-		return nil, errors.Errorf("expected value of type %T, got %T", plan, value)
+		return errors.Errorf("expected value of type %T, got %T", plan, value)
 	}
 
 	table := uitable.New()
@@ -217,5 +218,9 @@ func formatTabular(value interface{}) ([]byte, error) {
 		}
 	}
 
-	return table.Bytes(), nil
+	_, err := w.Write(table.Bytes())
+	if err != nil {
+		return errors.Annotatef(err, "failed to print table")
+	}
+	return nil
 }
