@@ -7,8 +7,10 @@ import (
 
 	"github.com/juju/cmd"
 	"github.com/juju/errors"
-	"gopkg.in/yaml.v2"
 	"github.com/juju/gnuflag"
+	"gopkg.in/yaml.v2"
+
+	"github.com/CanonicalLtd/plans-client/api/wireformat"
 )
 
 const attachPlanDoc = `
@@ -90,6 +92,13 @@ func (c *AttachCommand) Init(args []string) error {
 		return errors.Errorf("charm url %q is not resolved - did you mean %q?", charmURL, resolved)
 	}
 	c.CharmURL = charmURL
+	purl, err := wireformat.ParsePlanURL(c.PlanURL)
+	if err != nil {
+		return errors.Annotate(err, "failed to parse plan url")
+	}
+	if purl.Revision != 0 {
+		return errors.Errorf("can't attach plan with specific revision, try %q", purl.StringNoRevision())
+	}
 	return nil
 }
 
