@@ -83,6 +83,13 @@ func (s *attachSuite) TestCommand(c *gc.C) {
 			stub.CheckCall(c, 1, "AddCharm", "testisv/default", "some-charm-url", true)
 		},
 	}, {
+		about: "can't use plan with revision",
+		args:  []string{"some-charm-url", "testisv/default/1"},
+		err:   `can't attach plan with specific revision, try "testisv/default"`,
+		assertCalls: func(stub *testing.Stub) {
+			stub.CheckNoCalls(c)
+		},
+	}, {
 		about:        "plan not valid for charm",
 		args:         []string{"some-charm-url", "testisv/default"},
 		charmMetrics: []string{"pings"},
