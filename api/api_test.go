@@ -423,6 +423,13 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsNotFound(c *gc.C) {
 	c.Assert(errors.IsNotFound(err), jc.IsTrue)
 }
 
+func (s *clientIntegrationSuite) TestSuspendResumeFailsWithPlanRevision(c *gc.C) {
+	err := s.planClient.Suspend("testisv/default/1", false, "cs:~testers/charm1-0")
+	c.Assert(err, gc.ErrorMatches, "plan revision specified where none was expected")
+	err = s.planClient.Suspend("testisv/default/1", false, "cs:~testers/charm1-0")
+	c.Assert(err, gc.ErrorMatches, "plan revision specified where none was expected")
+}
+
 type mockHttpClient struct {
 	status        int
 	body          interface{}
