@@ -144,6 +144,9 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 	if err != nil {
 		return errors.Trace(err)
 	}
+	if pURL.Revision != 0 {
+		return errors.Errorf("plan revision specified where none was expected")
+	}
 	request := struct {
 		All    bool     `json:"all"`
 		Charms []string `json:"charms"`
