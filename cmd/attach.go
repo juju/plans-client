@@ -122,6 +122,9 @@ func (c *AttachCommand) Run(ctx *cmd.Context) error {
 		return errors.Errorf("expected 1 plan, got %d", len(plans))
 	}
 	plan := plans[0]
+	if !plan.Released {
+		return errors.Errorf("cannot attach charm to an unreleased plan")
+	}
 	planMetricNames, err := planMetrics(plan.Definition)
 	if err != nil {
 		return errors.Trace(err)
