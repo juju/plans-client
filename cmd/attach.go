@@ -118,7 +118,10 @@ func (c *AttachCommand) Run(ctx *cmd.Context) error {
 	if err != nil {
 		return errors.Annotatef(err, "failed to retrieve plan %v", c.PlanURL)
 	}
-	if len(plans) != 1 {
+	if len(plans) == 0 {
+		return errors.Errorf("cannot find a released plan to attach")
+	}
+	if len(plans) > 1 {
 		return errors.Errorf("expected 1 plan, got %d", len(plans))
 	}
 	plan := plans[0]
