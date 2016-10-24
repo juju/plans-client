@@ -108,9 +108,10 @@ func (c *ShowCommand) Run(ctx *cmd.Context) error {
 
 func fromWire(showContent bool, plan *wireformat.PlanDetails) *planDetails {
 	p := planDetails{
-		ID:      plan.Plan.Id,
-		Created: eventFromWire(plan.Created),
-		Charms:  make([]charmDetails, len(plan.Charms)),
+		ID:            plan.Plan.Id,
+		Created:       eventFromWire(plan.Created),
+		Charms:        make([]charmDetails, len(plan.Charms)),
+		EffectiveTime: plan.Plan.EffectiveTime,
 	}
 	if showContent {
 		p.Definition = plan.Plan.Definition
@@ -144,6 +145,7 @@ type planDetails struct {
 	PlanDescription string         `json:"description,omitempty" yaml:"description"`
 	PlanPrice       string         `json:"price,omitempty" yaml:"price,omitempty"`
 	Charms          []charmDetails `json:"charms,omitempty" yaml:"charms,omitempty"`
+	EffectiveTime   *time.Time     `json:"effective-time,omitempty" yaml:"effective-time,omitempty"`
 }
 
 type charmDetails struct {
@@ -187,6 +189,10 @@ func formatTabular(w io.Writer, value interface{}) error {
 	if plan.Released != nil {
 		table.AddRow("", "RELEASED BY", "TIME")
 		table.AddRow("", plan.Released.User, plan.Released.Time)
+	}
+	if plan.EffectiveTime != nil {
+		table.AddRow("", "", "EFFECTIVE")
+		table.AddRow("", "", plan.EffectiveTime)
 	}
 	if plan.PlanDescription != "" {
 		table.AddRow("", "DESCRIPTION", plan.PlanDescription)
