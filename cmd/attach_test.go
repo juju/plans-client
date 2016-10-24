@@ -44,6 +44,7 @@ func (s *attachSuite) TestCommand(c *gc.C) {
 		args             []string
 		charmMetrics     []string
 		resolvedCharmURL string
+		notReleased      bool
 		err              string
 		stdout           string
 		assertCalls      func(*testing.Stub)
@@ -63,6 +64,14 @@ func (s *attachSuite) TestCommand(c *gc.C) {
 		assertCalls: func(stub *testing.Stub) {
 			stub.CheckCall(c, 0, "Get", "testisv/default")
 			stub.CheckCall(c, 1, "AddCharm", "testisv/default", "some-charm-url", false)
+		},
+	}, {
+		about:       "cannot attach to an unreleased plan",
+		args:        []string{"some-charm-url", "testisv/default"},
+		err:         "cannot attach charm to an unreleased plan",
+		notReleased: true,
+		assertCalls: func(stub *testing.Stub) {
+			stub.CheckCall(c, 0, "Get", "testisv/default")
 		},
 	}, {
 		about:            "unresolved charm url causes error",
@@ -109,6 +118,7 @@ func (s *attachSuite) TestCommand(c *gc.C) {
 
 	for i, t := range tests {
 		s.mockAPI.ResetCalls()
+		s.mockAPI.Released = !t.notReleased
 		testCommand := &cmd.AttachCommand{
 			CharmResolver: &mockCharmResolver{
 				Stub:         &testing.Stub{},

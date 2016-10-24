@@ -30,6 +30,7 @@ var TestPlan = `
 type MockPlanClient struct {
 	*jujutesting.Stub
 	PlanDetails *wireformat.PlanDetails
+	Released    bool
 }
 
 // NewMockPlanClient returns a new MockPlanClient
@@ -110,6 +111,7 @@ func (m *MockPlanClient) Get(planURL string) ([]wireformat.Plan, error) {
 		URL:        planURL,
 		Definition: TestPlan,
 		CreatedOn:  time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		Released:   m.Released,
 	}
 	return []wireformat.Plan{p}, nil
 }
