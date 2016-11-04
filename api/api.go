@@ -178,6 +178,11 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 // Save stores the rating plan definition (definition - plan definition yaml) under a
 // specified name (planURL).
 func (c *client) Save(planURL string, definition string) (*wireformat.Plan, error) {
+	_, err := wireformat.ParsePlanURL(planURL)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
 	u, err := url.Parse(c.plansService + "/p")
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -219,6 +224,14 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 // AddCharm adds the specified charm to all plans matching the criteria.
 // If uuid is defined, both, the isvname and planname may be empty ("").
 func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error {
+	pURL, err := wireformat.ParsePlanURL(planURL)
+	if err != nil {
+		return errors.Trace(err)
+	}
+	if pURL.Revision != 0 {
+		return errors.New("must specify the plan revision")
+	}
+
 	u, err := url.Parse(c.plansService + "/charm")
 	if err != nil {
 		return errors.Trace(err)
@@ -261,6 +274,11 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 
 // Get performs a query on the plans service and returns all matching plans.
 func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
+	_, err := wireformat.ParsePlanURL(planURL)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
 	u, err := url.Parse(c.plansService + "/p/" + planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
