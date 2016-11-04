@@ -1,3 +1,6 @@
+github.com/CanonicalLtd/omniutils	git	5607073a14a511f67de2b8fc0afab43164f2d3bc	2016-10-20T23:06:20Z
+github.com/gorilla/context	git	215affda49addc4c8ef7e2534915df2c8c35c6cd	2014-12-17T16:02:51Z
+github.com/gorilla/mux	git	e444e69cbd2e2e3e0749a2f3c717cec491552bbf	2014-09-26T15:38:14Z
 github.com/gosuri/uitable	git	36ee7e946282a3fb1cfecd476ddc9b35d8847e42	2016-04-04T20:39:58Z
 github.com/juju/ansiterm	git	b99631de12cf04a906c1d4e4ec54fb86eae5863d	2016-09-07T23:45:32Z
 github.com/juju/cmd	git	1c6973d59b804e4d3c293fbf240f067e73436bc9	2016-08-23T10:31:14Z
@@ -35,6 +38,8 @@ gopkg.in/juju/charmrepo.v2-unstable	git	73c1113f7ddee0306f4b3c19773d35a3f153c04a
 gopkg.in/juju/environschema.v1	git	7359fc7857abe2b11b5b3e23811a9c64cb6b01e0	2015-11-04T11:58:10Z
 gopkg.in/juju/names.v2	git	3317ff7471a685109e262892b5f81b940ad5782f	2016-10-05T07:27:06Z
 gopkg.in/macaroon-bakery.v1	git	469b44e6f1f9479e115c8ae879ef80695be624d5	2016-06-22T12:14:21Z
+gopkg.in/macaroon-bakery.v2-unstable	git	5e87a4e791064e378444044fe31453c23281bce8	2016-07-27T10:32:47Z
 gopkg.in/macaroon.v1	git	ab3940c6c16510a850e1c2dd628b919f0f3f1464	2015-01-21T11:42:31Z
+gopkg.in/macaroon.v2-unstable	git	1a228a53677cf9c0285b972548065a5485b7ef45	2016-07-22T07:48:07Z
 gopkg.in/mgo.v2	git	f2b6f6c918c452ad107eec89615f074e3bd80e33	2016-08-18T01:52:18Z
 gopkg.in/yaml.v2	git	a83829b6f1293c91addabc89d0571c246397bbf4	2016-03-01T20:40:22Z
