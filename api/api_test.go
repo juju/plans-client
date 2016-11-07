@@ -78,7 +78,7 @@ func (s *clientIntegrationSuite) TestSaveFail(c *gc.C) {
 	}
 
 	_, err := s.planClient.Save("testisv/default", testPlan)
-	c.Assert(err, gc.ErrorMatches, `failed to store the plan: silly error \[bad request\]`)
+	c.Assert(err, gc.ErrorMatches, `failed to save plan: silly error \[bad request\]`)
 }
 
 func (s *clientIntegrationSuite) TestRelease(c *gc.C) {
@@ -111,7 +111,7 @@ func (s *clientIntegrationSuite) TestReleaseFail(c *gc.C) {
 	}
 
 	_, err := s.planClient.Release("testisv/default/1")
-	c.Assert(err, gc.ErrorMatches, `failed to release the plan: silly error \[bad request\]`)
+	c.Assert(err, gc.ErrorMatches, `failed to release plan: silly error \[bad request\]`)
 }
 
 func (s *clientIntegrationSuite) TestSuspend(c *gc.C) {
@@ -157,7 +157,7 @@ func (s *clientIntegrationSuite) TestSuspendFail(c *gc.C) {
 	}
 
 	err := s.planClient.Suspend("testisv/default", false, "cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, `failed to suspend the plan: silly error \[bad request\]`)
+	c.Assert(err, gc.ErrorMatches, `failed to suspend plan: silly error \[bad request\]`)
 }
 
 func (s *clientIntegrationSuite) TestResume(c *gc.C) {
@@ -203,7 +203,7 @@ func (s *clientIntegrationSuite) TestResumeFail(c *gc.C) {
 	}
 
 	err := s.planClient.Resume("testisv/default", false, "cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, `failed to resume the plan: silly error \[bad request\]`)
+	c.Assert(err, gc.ErrorMatches, `failed to resume plan: silly error \[bad request\]`)
 }
 
 func (s *clientIntegrationSuite) TestAddCharm(c *gc.C) {
@@ -233,7 +233,7 @@ func (s *clientIntegrationSuite) TestAddCharmFail(c *gc.C) {
 	}
 
 	err := s.planClient.AddCharm("testisv/default", "cs:~testers/charm1-0", false)
-	c.Assert(err, gc.ErrorMatches, `failed to update the plan: silly error \[bad request\]`)
+	c.Assert(err, gc.ErrorMatches, `failed to update plan: silly error \[bad request\]`)
 }
 
 func (s *clientIntegrationSuite) TestGet(c *gc.C) {
@@ -261,7 +261,7 @@ func (s *clientIntegrationSuite) TestGetFail(c *gc.C) {
 	}
 
 	_, err := s.planClient.Get("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve matching plans: silly error \[bad request\]`)
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error \[bad request\]`)
 }
 
 func (s *clientIntegrationSuite) TestGetDefaultPlan(c *gc.C) {
@@ -405,7 +405,7 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsFail(c *gc.C) {
 	}
 
 	_, err := s.planClient.GetPlanDetails("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details: silly error \[bad request\]`)
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error \[bad request\]`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanDetailsNotFound(c *gc.C) {
@@ -419,8 +419,7 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsNotFound(c *gc.C) {
 	}
 
 	_, err := s.planClient.GetPlanDetails("testisv/default")
-	c.Assert(err, gc.ErrorMatches, "testisv/default not found")
-	c.Assert(errors.IsNotFound(err), jc.IsTrue)
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error \[not found\]`)
 }
 
 func (s *clientIntegrationSuite) TestSuspendResumeFailsWithPlanRevision(c *gc.C) {
