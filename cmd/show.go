@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -30,9 +31,10 @@ var _ cmd.Command = (*ShowCommand)(nil)
 type ShowCommand struct {
 	baseCommand
 
-	out         cmd.Output
-	PlanURL     string
-	ShowContent bool
+	out            cmd.Output
+	PlanURL        string
+	ShowContent    bool
+	OnlyDefinition bool
 }
 
 // NewShowCommand creates a new ShowCommand.
@@ -50,6 +52,7 @@ func (c *ShowCommand) SetFlags(f *gnuflag.FlagSet) {
 		"tabular": formatTabular,
 	})
 	f.BoolVar(&c.ShowContent, "content", false, "show plan definition")
+	f.BoolVar(&c.OnlyDefinition, "definition", false, "show only the plan definition")
 }
 
 // Description returns a one-line description of the command.
@@ -97,6 +100,11 @@ func (c *ShowCommand) Run(ctx *cmd.Context) error {
 	plan, err := apiClient.GetPlanDetails(c.PlanURL)
 	if err != nil {
 		return errors.Annotatef(err, "failed to retrieve plan %v details", c.PlanURL)
+	}
+
+	if c.OnlyDefinition {
+		fmt.Fprintf(ctx.Stdout, "%v\n%v", plan.Plan.Id, plan.Plan.Definition)
+		return nil
 	}
 
 	err = c.out.Write(ctx, fromWire(c.ShowContent, plan))
