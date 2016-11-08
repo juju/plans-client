@@ -13,10 +13,10 @@ import (
 )
 
 const releaseDoc = `
-release-plan is used to release the specified plan
+release-plan is used to release the specified plan revision
 Example
-release-plan canonical/foobar
-	release the canonical/foobar plan
+release-plan canonical/foobar/1
+	release revision 1 of the canonical/foobar plan
 `
 const releasePlanPurpose = "release the plan"
 
@@ -41,7 +41,7 @@ func (c *ReleaseCommand) SetFlags(f *gnuflag.FlagSet) {
 func (c *ReleaseCommand) Info() *cmd.Info {
 	return &cmd.Info{
 		Name:    "release-plans",
-		Args:    "<plan>",
+		Args:    "<plan-revision>",
 		Purpose: releasePlanPurpose,
 		Doc:     releaseDoc,
 	}
