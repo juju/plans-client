@@ -38,6 +38,22 @@ func (s *showSuite) SetUpTest(c *gc.C) {
 	})
 }
 
+const planDefinitionOutput = `testisv/default/1
+
+# Copyright 2014 Canonical Ltd.  All rights reserved.
+    description:
+        price: 10USD per unit/month
+        text: |
+           This is a test plan.
+    metrics:
+      active-users:
+        unit:
+          transform: max
+          period: hour
+          gaps: zero
+        price: 0.01
+`
+
 func (s *showSuite) TestCommand(c *gc.C) {
 	t := time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC)
 	p := &wireformat.PlanDetails{
@@ -91,6 +107,7 @@ func (s *showSuite) TestCommand(c *gc.C) {
 		resolvedCharmURL string
 		err              string
 		assertStdout     func(*gc.C, string)
+		assertOutput     func(*gc.C, string)
 		assertCalls      func(*testing.Stub)
 	}{{
 		about: "unrecognized args causes error",
@@ -208,6 +225,33 @@ cs:~testisv/charm2-1	   joe.jaas	                     2015-01-01 01:00:00 +0000 
 		assertCalls: func(stub *testing.Stub) {
 			stub.CheckNoCalls(c)
 		},
+	}, {
+		about: "everything works - only definition - yaml",
+		args:  []string{"testisv/default", "--definition", "--format", "yaml"},
+		assertOutput: func(c *gc.C, output string) {
+			c.Assert(output, jc.DeepEquals, planDefinitionOutput)
+		},
+		assertCalls: func(stub *testing.Stub) {
+			stub.CheckCall(c, 0, "GetPlanDetails", "testisv/default")
+		},
+	}, {
+		about: "everything works - only definition - tabular",
+		args:  []string{"testisv/default", "--definition", "--format", "tabular"},
+		assertOutput: func(c *gc.C, output string) {
+			c.Assert(output, jc.DeepEquals, planDefinitionOutput)
+		},
+		assertCalls: func(stub *testing.Stub) {
+			stub.CheckCall(c, 0, "GetPlanDetails", "testisv/default")
+		},
+	}, {
+		about: "everything works - only definition - json",
+		args:  []string{"testisv/default", "--definition", "--format", "json"},
+		assertOutput: func(c *gc.C, output string) {
+			c.Assert(output, jc.DeepEquals, planDefinitionOutput)
+		},
+		assertCalls: func(stub *testing.Stub) {
+			stub.CheckCall(c, 0, "GetPlanDetails", "testisv/default")
+		},
 	},
 	}
 
@@ -225,7 +269,11 @@ cs:~testisv/charm2-1	   joe.jaas	                     2015-01-01 01:00:00 +0000 
 		t.assertCalls(s.mockAPI.Stub)
 
 		if ctx != nil {
-			t.assertStdout(c, cmdtesting.Stdout(ctx))
+			if t.assertStdout != nil {
+				t.assertStdout(c, cmdtesting.Stdout(ctx))
+			} else {
+				t.assertOutput(c, cmdtesting.Stdout(ctx))
+			}
 		}
 	}
 }
