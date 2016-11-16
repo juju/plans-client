@@ -131,6 +131,7 @@ func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails
 				CreatedOn:       time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 				PlanDescription: "a test plan",
 				PlanPrice:       "a test plan price description",
+				EffectiveTime:   &t,
 			},
 			Created: wireformat.Event{
 				User: "jane.jaas",

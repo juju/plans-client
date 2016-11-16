@@ -64,6 +64,7 @@ func (s *showSuite) TestCommand(c *gc.C) {
 			CreatedOn:       time.Date(2015, 1, 1, 1, 0, 0, 0, time.UTC).Format(time.RFC3339),
 			PlanDescription: "a test plan",
 			PlanPrice:       "a test plan price description",
+			EffectiveTime:   &t,
 		},
 		Created: wireformat.Event{
 			User: "jane.jaas",
@@ -165,6 +166,8 @@ testisv/default/1
                     	  jane.jaas	2015-01-01 01:00:00 +0000 UTC
                     	RELEASED BY	                         TIME
                     	  john.jaas	2016-01-01 01:00:00 +0000 UTC
+                    	           	                    EFFECTIVE
+                    	           	2015-01-01 01:00:00 +0000 UTC
 CHARMS              
 CHARM               	ATTACHED BY	                         TIME	DEFAULT	                             
 cs:~testisv/charm1-0	  jane.jaas	2015-01-01 01:00:00 +0000 UTC	  false	                             
@@ -188,6 +191,8 @@ testisv/default/1
                     	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC
                     	RELEASED BY	                                              TIME
                     	  john.jaas	                     2016-01-01 01:00:00 +0000 UTC
+                    	           	                                         EFFECTIVE
+                    	           	                     2015-01-01 01:00:00 +0000 UTC
                     	DESCRIPTION	                                       a test plan
                     	      PRICE	                     a test plan price description
                     	 DEFINITION	                                                  
