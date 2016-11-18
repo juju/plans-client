@@ -429,6 +429,39 @@ func (s *clientIntegrationSuite) TestSuspendResumeFailsWithPlanRevision(c *gc.C)
 	c.Assert(err, gc.ErrorMatches, "plan revision specified where none was expected")
 }
 
+func (s *clientIntegrationSuite) TestGetPlanRevisions(c *gc.C) {
+	plans := []wireformat.Plan{{
+		Id:         "testisv/default/1",
+		URL:        "testisv/default",
+		Definition: testPlan,
+	}, {
+		Id:         "testisv/default/2",
+		URL:        "testisv/default",
+		Definition: testPlan,
+	}}
+	s.httpClient.status = http.StatusOK
+	s.httpClient.body = plans
+
+	response, err := s.planClient.GetPlanRevisions("testisv/default")
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(response, gc.DeepEquals, plans)
+	s.httpClient.assertRequest(c, "GET", "/p/testisv/default/revisions", nil)
+}
+
+func (s *clientIntegrationSuite) TestGetPlanRevisionsFail(c *gc.C) {
+	s.httpClient.status = http.StatusBadRequest
+	s.httpClient.body = struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}{
+		Code:    "bad request",
+		Message: "silly error",
+	}
+
+	_, err := s.planClient.GetPlanRevisions("testisv/default")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan revisions: silly error \[bad request\]`)
+}
+
 type mockHttpClient struct {
 	status        int
 	body          interface{}

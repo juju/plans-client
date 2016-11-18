@@ -39,6 +39,8 @@ type PlanClient interface {
 	Release(planURL string) (*wireformat.Plan, error)
 	// GetPlanDetails returns detailed information about a plan.
 	GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
+	// GetPlanRevisions returns all revision of a plan.
+	GetPlanRevisions(planURL string) ([]wireformat.Plan, error)
 }
 
 type httpClient interface {
@@ -105,9 +107,9 @@ func (c *client) Release(planURL string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to release the plan")
 	}
-	defer util.DiscardClose(response)
+	defer omniutils.DiscardClose(response)
 
-	err = util.UnmarshalError("release plan", response)
+	err = omniutils.UnmarshalError("release plan", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -165,9 +167,9 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 	if err != nil {
 		return errors.Annotate(err, "failed to resume the plan")
 	}
-	defer util.DiscardClose(response)
+	defer omniutils.DiscardClose(response)
 
-	err = util.UnmarshalError(fmt.Sprintf("%s plan", operation), response)
+	err = omniutils.UnmarshalError(fmt.Sprintf("%s plan", operation), response)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -206,7 +208,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 		return nil, errors.Annotate(err, "failed to store the plan")
 	}
 
-	err = util.UnmarshalError("save plan", response)
+	err = omniutils.UnmarshalError("save plan", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -263,9 +265,9 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 	if err != nil {
 		return errors.Annotate(err, "failed to update plan")
 	}
-	defer util.DiscardClose(response)
+	defer omniutils.DiscardClose(response)
 
-	err = util.UnmarshalError("update plan", response)
+	err = omniutils.UnmarshalError("update plan", response)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -293,8 +295,47 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve matching plans")
 	}
-	defer util.DiscardClose(response)
-	err = util.UnmarshalError("retrieve plans", response)
+	defer omniutils.DiscardClose(response)
+	err = omniutils.UnmarshalError("retrieve plans", response)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	var plans []wireformat.Plan
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&plans)
+	if err != nil {
+		return nil, errors.Annotatef(err, "failed to unmarshal the response")
+	}
+	return plans, nil
+}
+
+// GetPlanRevisions returns all revisions of a plan.
+func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
+	planURL, err := wireformat.ParsePlanURL(plan)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	if planURL.Revision != 0 {
+		return nil, errors.Errorf("plan revision specified where none was expected")
+	}
+
+	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/revisions", c.plansService, planURL.Owner, planURL.Name))
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create a GET request")
+	}
+
+	response, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to retrieve plan revisions")
+	}
+	defer omniutils.DiscardClose(response)
+	err = omniutils.UnmarshalError("retrieve plan revisions", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -326,9 +367,9 @@ func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve default plan")
 	}
-	defer util.DiscardClose(response)
+	defer omniutils.DiscardClose(response)
 
-	err = util.UnmarshalError("retrieve default plan", response)
+	err = omniutils.UnmarshalError("retrieve default plan", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -360,9 +401,9 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve default plan")
 	}
-	defer util.DiscardClose(response)
+	defer omniutils.DiscardClose(response)
 
-	err = util.UnmarshalError("retrieve associated plans", response)
+	err = omniutils.UnmarshalError("retrieve associated plans", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -402,9 +443,9 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve matching plans")
 	}
-	defer util.DiscardClose(response)
+	defer omniutils.DiscardClose(response)
 
-	err = util.UnmarshalError("retrieve plans", response)
+	err = omniutils.UnmarshalError("retrieve plans", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
