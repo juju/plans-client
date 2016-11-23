@@ -5,6 +5,7 @@ package testing
 import (
 	"time"
 
+	"github.com/juju/errors"
 	jujutesting "github.com/juju/testing"
 
 	"github.com/CanonicalLtd/plans-client/api"
@@ -29,8 +30,9 @@ var TestPlan = `
 // MockPlanClient implements a mock of the plan api client.
 type MockPlanClient struct {
 	*jujutesting.Stub
-	PlanDetails *wireformat.PlanDetails
-	Released    bool
+	PlanDetails   *wireformat.PlanDetails
+	PlanRevisions []wireformat.Plan
+	Released      bool
 }
 
 // NewMockPlanClient returns a new MockPlanClient
@@ -114,6 +116,19 @@ func (m *MockPlanClient) Get(planURL string) ([]wireformat.Plan, error) {
 		Released:   m.Released,
 	}
 	return []wireformat.Plan{p}, nil
+}
+
+// GetPlanRevisions returns all revisions of a plan.
+func (m *MockPlanClient) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
+	planURL, err := wireformat.ParsePlanURL(plan)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	if planURL.Revision != 0 {
+		return nil, errors.Errorf("plan revision specified where none was expected")
+	}
+	m.MethodCall(m, "GetPlanRevisions", plan)
+	return m.PlanRevisions, nil
 }
 
 // GetPlanDetails returns detailed information about a plan.
