@@ -160,7 +160,7 @@ func (s *showSuite) TestCommand(c *gc.C) {
 		about: "everything works - tabular",
 		args:  []string{"testisv/default"},
 		assertStdout: func(c *gc.C, output string) {
-			c.Assert(output, gc.Equals, `PLAN                
+			c.Assert(output, plantesting.MultilineEquals, `PLAN                
 testisv/default/1   
                     	 CREATED BY	                         TIME
                     	  jane.jaas	2015-01-01 01:00:00 +0000 UTC
@@ -185,7 +185,7 @@ cs:~testisv/charm2-1	   joe.jaas	2015-01-01 01:00:00 +0000 UTC	   true	2015-01-0
 		about: "everything works - tabular - content",
 		args:  []string{"testisv/default", "--content"},
 		assertStdout: func(c *gc.C, output string) {
-			c.Assert(output, gc.Equals, `PLAN                
+			c.Assert(output, plantesting.MultilineEquals, `PLAN                
 testisv/default/1   
                     	 CREATED BY	                                              TIME
                     	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC
@@ -348,7 +348,7 @@ func (s *showSuite) TestCommandWithUnreleasedPlan(c *gc.C) {
 		about: "everything works - tabular",
 		args:  []string{"testisv/default"},
 		assertStdout: func(c *gc.C, output string) {
-			c.Assert(output, gc.Equals, `PLAN             
+			c.Assert(output, plantesting.MultilineEquals, `PLAN             
 testisv/default/1
                  	CREATED BY	                         TIME
                  	 jane.jaas	2015-01-01 01:00:00 +0000 UTC
@@ -361,7 +361,7 @@ testisv/default/1
 		about: "everything works - tabular - content",
 		args:  []string{"testisv/default", "--content"},
 		assertStdout: func(c *gc.C, output string) {
-			c.Assert(output, gc.Equals, `PLAN             
+			c.Assert(output, plantesting.MultilineEquals, `PLAN             
 testisv/default/1
                  	 CREATED BY	                                              TIME
                  	  jane.jaas	                     2015-01-01 01:00:00 +0000 UTC
