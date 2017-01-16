@@ -5,7 +5,6 @@ package wireformat_test
 import (
 	stdtesting "testing"
 
-	jc "github.com/juju/testing/checkers"
 	"github.com/juju/utils"
 	gc "gopkg.in/check.v1"
 
@@ -42,7 +41,7 @@ func (*suite) TestPlanWireValidation(c *gc.C) {
 	}{{
 		about: "a valid plan",
 		plan: wireformat.Plan{
-			URL:        "isv/planA",
+			URL:        "isv/plana",
 			Definition: PingPlan},
 		result: "",
 	}, {
@@ -56,11 +55,11 @@ func (*suite) TestPlanWireValidation(c *gc.C) {
 		plan: wireformat.Plan{
 			URL:        "isvname",
 			Definition: PingPlan},
-		result: "invalid plan url format",
+		result: "plan url \"isvname\" not valid",
 	}, {
 		about: "missing definition",
 		plan: wireformat.Plan{
-			URL:        "isv/planA",
+			URL:        "isv/plan",
 			Definition: ""},
 		result: "missing plan definition",
 	}}
@@ -71,45 +70,6 @@ func (*suite) TestPlanWireValidation(c *gc.C) {
 			c.Check(err, gc.IsNil)
 		} else {
 			c.Check(err, gc.ErrorMatches, test.result)
-		}
-	}
-}
-
-func (*suite) TestPlanURLParsing(c *gc.C) {
-	tests := []struct {
-		url    string
-		result *wireformat.PlanURL
-		err    string
-	}{{
-		url:    "owner/plan",
-		result: &wireformat.PlanURL{Owner: "owner", Name: "plan"},
-		err:    "",
-	}, {
-		url:    "owner",
-		result: &wireformat.PlanURL{Owner: "owner", Name: ""},
-		err:    "",
-	}, {
-		url: "bad owner",
-		err: "invalid plan owner.*",
-	}, {
-		url: "not an/ owner/17/plan",
-		err: `invalid plan url format`,
-	}, {
-		url: "owner/not a valid plan",
-		err: `invalid plan name.*`,
-	}, {
-		url: "bad owner/bad name",
-		err: `invalid plan owner.*`,
-	}}
-	for i, test := range tests {
-		c.Logf("test %d", i)
-		p, err := wireformat.ParsePlanURL(test.url)
-		if test.err != "" {
-			c.Check(p, gc.IsNil)
-			c.Check(err, gc.ErrorMatches, test.err)
-		} else {
-			c.Check(*p, gc.DeepEquals, *test.result)
-			c.Check(err, jc.ErrorIsNil)
 		}
 	}
 }
@@ -183,16 +143,6 @@ func (*suite) TestAuthorizationRequestValidation(c *gc.C) {
 			Limit:           "100",
 		},
 		result: "undefined plan url",
-	}, {
-		about: "missing budget",
-		request: wireformat.AuthorizationRequest{
-			EnvironmentUUID: utils.MustNewUUID().String(),
-			CharmURL:        "cs:wordpress",
-			ServiceName:     "wordpress",
-			PlanURL:         "test-isv/default",
-			Limit:           "100",
-		},
-		result: "unspecified budget",
 	}, {
 		about: "missing limit",
 		request: wireformat.AuthorizationRequest{

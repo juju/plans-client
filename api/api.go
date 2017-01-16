@@ -10,10 +10,12 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/CanonicalLtd/omniutils"
 	"github.com/juju/errors"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
+	"gopkg.in/macaroon.v1"
 
 	"github.com/CanonicalLtd/plans-client/api/wireformat"
 )
@@ -41,6 +43,15 @@ type PlanClient interface {
 	GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 	// GetPlanRevisions returns all revision of a plan.
 	GetPlanRevisions(planURL string) ([]wireformat.Plan, error)
+	// Authorize returns the authorization macaroon for the specified environment, charm url and service name.
+	Authorize(environmentUUID, charmURL, serviceName, plan, budget, limit string) (*macaroon.Macaroon, error)
+	// AuthorizeReseller returns the reseller authorization macaroon for the specified application.
+	AuthorizeReseller(plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error)
+	// GetAuthorizations returns a slice of Authorizations that match the
+	// criteria specified in the query.
+	GetAuthorizations(query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error)
+	// GetResellerAuthorizations retuns a slice of reseller Authorizations.
+	GetResellerAuthorizations(query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error)
 }
 
 type httpClient interface {
@@ -87,14 +98,14 @@ func NewPlanClient(url string, options ...ClientOption) (*client, error) {
 
 // Release releases the specified plan.
 func (c *client) Release(planURL string) (*wireformat.Plan, error) {
-	pURL, err := wireformat.ParsePlanURL(planURL)
+	pID, err := wireformat.ParsePlanID(planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	if pURL.Revision == 0 {
+	if pID.Revision == 0 {
 		return nil, errors.New("must specify the plan revision")
 	}
-	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/%d/release", c.plansService, pURL.Owner, pURL.Name, pURL.Revision))
+	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/%d/release", c.plansService, pID.Owner, pID.Name, pID.Revision))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -138,9 +149,6 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 	pURL, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return errors.Trace(err)
-	}
-	if pURL.Revision != 0 {
-		return errors.Errorf("plan revision specified where none was expected")
 	}
 	request := struct {
 		All    bool     `json:"all"`
@@ -226,12 +234,9 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 // AddCharm adds the specified charm to all plans matching the criteria.
 // If uuid is defined, both, the isvname and planname may be empty ("").
 func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error {
-	pURL, err := wireformat.ParsePlanURL(planURL)
+	_, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return errors.Trace(err)
-	}
-	if pURL.Revision != 0 {
-		return errors.New("must specify the plan revision")
 	}
 
 	u, err := url.Parse(c.plansService + "/charm")
@@ -312,15 +317,15 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 
 // GetPlanRevisions returns all revisions of a plan.
 func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
-	planURL, err := wireformat.ParsePlanURL(plan)
+	planID, err := wireformat.ParsePlanIDWithOptionalRevision(plan)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	if planURL.Revision != 0 {
-		return nil, errors.Errorf("plan revision specified where none was expected")
+	if planID.Revision != 0 {
+		return nil, errors.New("plan revision specified where none was expected")
 	}
 
-	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/revisions", c.plansService, planURL.Owner, planURL.Name))
+	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/revisions", c.plansService, planID.Owner, planID.Name))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -420,7 +425,7 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 // GetPlanDetailes returns detailed information about a plan.
 func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error) {
 	query := url.Values{}
-	purl, err := wireformat.ParsePlanURL(planURL)
+	purl, err := wireformat.ParsePlanIDWithOptionalRevision(planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -428,7 +433,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 		query.Add("revision", fmt.Sprintf("%d", purl.Revision))
 	}
 
-	u, err := url.Parse(c.plansService + "/p/" + purl.StringNoRevision() + "/details")
+	u, err := url.Parse(c.plansService + "/p/" + purl.PlanURL.String() + "/details")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -457,4 +462,189 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 		return nil, errors.Annotatef(err, "failed to unmarshal the response")
 	}
 	return &plan, nil
+}
+
+// Authorize implements the AuthorizationClient.Authorize method.
+func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL, budget, limit string) (*macaroon.Macaroon, error) {
+	u, err := url.Parse(c.plansService + "/plan/authorize")
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	auth := wireformat.AuthorizationRequest{
+		EnvironmentUUID: environmentUUID,
+		CharmURL:        charmURL,
+		ServiceName:     serviceName,
+		PlanURL:         planURL,
+		Budget:          budget,
+		Limit:           limit,
+	}
+
+	buff := &bytes.Buffer{}
+	encoder := json.NewEncoder(buff)
+	err = encoder.Encode(auth)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	response, err := c.client.DoWithBody(req, bytes.NewReader(buff.Bytes()))
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	defer omniutils.DiscardClose(response)
+
+	err = omniutils.UnmarshalError("authorize plan", response)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	var m *macaroon.Macaroon
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&m)
+	if err != nil {
+		return nil, errors.Annotatef(err, "failed to unmarshal the response")
+	}
+
+	return m, nil
+}
+
+// GetAuthorizations implements the PlanAuthorizationClient.GetAuthorizations interface.
+func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error) {
+	u, err := url.Parse(c.plansService + "/plan/authorization")
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	q := u.Query()
+	q.Set("authorization-id", query.AuthorizationID)
+	q.Set("user", query.User)
+	q.Set("plan-url", query.PlanURL)
+	q.Set("env-uuid", query.EnvironmentUUID)
+	q.Set("charm-url", query.CharmURL)
+	q.Set("service-name", query.ServiceName)
+	q.Set("include-plan", strconv.FormatBool(query.IncludePlan))
+	q.Set("statement-period", query.StatementPeriod)
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create GET request")
+	}
+
+	response, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to retrieve authorizations")
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusNotFound {
+		return []wireformat.Authorization{}, nil
+	}
+	err = omniutils.UnmarshalError("retrieve authorizations", response)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	var auths []wireformat.Authorization
+	dec := json.NewDecoder(response.Body)
+	err = dec.Decode(&auths)
+	if err != nil {
+		return nil, errors.Annotatef(err, "failed to unmarshal response")
+	}
+	return auths, nil
+}
+
+// AuthorizeReseller returns the reseller authorization macaroon for the specified application.
+func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error) {
+	u, err := url.Parse(c.plansService + "/plan/reseller/authorize")
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	auth := wireformat.ResellerAuthorizationRequest{
+		Plan:             plan,
+		CharmURL:         charm,
+		Application:      application,
+		ApplicationOwner: applicationOwner,
+		ApplicationUser:  applicationUser,
+	}
+
+	buff := &bytes.Buffer{}
+	encoder := json.NewEncoder(buff)
+	err = encoder.Encode(auth)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	response, err := c.client.DoWithBody(req, bytes.NewReader(buff.Bytes()))
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	defer omniutils.DiscardClose(response)
+
+	err = omniutils.UnmarshalError("authorize reseller plan", response)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	var m *macaroon.Macaroon
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&m)
+	if err != nil {
+		return nil, errors.Annotatef(err, "failed to unmarshal the response")
+	}
+
+	return m, nil
+}
+
+// GetAuthorizations implements the PlanAuthorizationClient.GetAuthorizations interface.
+func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error) {
+	u, err := url.Parse(fmt.Sprintf("%s/plan/reseller/%s/authorization", c.plansService, query.Reseller))
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	q := u.Query()
+	q.Set("auth-uuid", query.AuthUUID)
+	q.Set("user", query.User)
+	q.Set("application", query.Application)
+	if query.IncludePlan {
+		q.Set("include-plan", strconv.FormatBool(query.IncludePlan))
+		q.Set("statement-period", query.StatementPeriod)
+	}
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create GET request")
+	}
+
+	response, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to retrieve authorizations")
+	}
+	defer response.Body.Close()
+
+	err = omniutils.UnmarshalError("retrieve reseller authorizations", response)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	var auths []wireformat.ResellerAuthorization
+	dec := json.NewDecoder(response.Body)
+	err = dec.Decode(&auths)
+	if err != nil {
+		return nil, errors.Annotatef(err, "failed to unmarshal response")
+	}
+	return auths, nil
 }

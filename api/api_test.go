@@ -15,6 +15,7 @@ import (
 	"github.com/juju/errors"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
+	"gopkg.in/macaroon.v1"
 
 	"github.com/CanonicalLtd/plans-client/api"
 	"github.com/CanonicalLtd/plans-client/api/wireformat"
@@ -97,7 +98,7 @@ func (s *clientIntegrationSuite) TestRelease(c *gc.C) {
 
 func (s *clientIntegrationSuite) TestReleaseInvalidPlanURL(c *gc.C) {
 	_, err := s.planClient.Release("invalid/format/testisv/0/default")
-	c.Assert(err, gc.ErrorMatches, "invalid plan url format")
+	c.Assert(err, gc.ErrorMatches, `plan id "invalid/format/testisv/0/default" not valid`)
 }
 
 func (s *clientIntegrationSuite) TestReleaseFail(c *gc.C) {
@@ -143,7 +144,7 @@ func (s *clientIntegrationSuite) TestSuspendAll(c *gc.C) {
 
 func (s *clientIntegrationSuite) TestSuspendInvalidPlanURL(c *gc.C) {
 	err := s.planClient.Suspend("invalid/format/testisv/default", false, "cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, "invalid plan url format")
+	c.Assert(err, gc.ErrorMatches, `plan url "invalid/format/testisv/default" not valid`)
 }
 
 func (s *clientIntegrationSuite) TestSuspendFail(c *gc.C) {
@@ -189,7 +190,7 @@ func (s *clientIntegrationSuite) TestResumeAll(c *gc.C) {
 
 func (s *clientIntegrationSuite) TestResumeInvalidPlanURL(c *gc.C) {
 	err := s.planClient.Resume("invalid/format/testisv/default", false, "cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, "invalid plan url format")
+	c.Assert(err, gc.ErrorMatches, `plan url "invalid/format/testisv/default" not valid`)
 }
 
 func (s *clientIntegrationSuite) TestResumeFail(c *gc.C) {
@@ -424,9 +425,9 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsNotFound(c *gc.C) {
 
 func (s *clientIntegrationSuite) TestSuspendResumeFailsWithPlanRevision(c *gc.C) {
 	err := s.planClient.Suspend("testisv/default/1", false, "cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, "plan revision specified where none was expected")
+	c.Assert(err, gc.ErrorMatches, `plan url "testisv/default/1" not valid`)
 	err = s.planClient.Suspend("testisv/default/1", false, "cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, "plan revision specified where none was expected")
+	c.Assert(err, gc.ErrorMatches, `plan url "testisv/default/1" not valid`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanRevisions(c *gc.C) {
@@ -460,6 +461,79 @@ func (s *clientIntegrationSuite) TestGetPlanRevisionsFail(c *gc.C) {
 
 	_, err := s.planClient.GetPlanRevisions("testisv/default")
 	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan revisions: silly error \[bad request\]`)
+}
+
+func (s *clientIntegrationSuite) TestAuthorize(c *gc.C) {
+	m, err := macaroon.New([]byte{}, "abc", "")
+	c.Assert(err, jc.ErrorIsNil)
+	s.httpClient.status = http.StatusOK
+	s.httpClient.body = m
+
+	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
+	c.Assert(err, jc.ErrorIsNil)
+	macaroon, err := client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default", "default-budget", "inf")
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(macaroon, jc.DeepEquals, m)
+	s.httpClient.assertRequest(c, "POST", "/plan/authorize", wireformat.AuthorizationRequest{
+		EnvironmentUUID: "envUUID",
+		CharmURL:        "cs:~testers/charm1-0",
+		ServiceName:     "test-service",
+		PlanURL:         "testisv/default",
+		Budget:          "default-budget",
+		Limit:           "inf",
+	})
+}
+
+func (s *clientIntegrationSuite) TestAuthorizeFail(c *gc.C) {
+	s.httpClient.status = http.StatusBadRequest
+	s.httpClient.body = struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}{
+		Code:    "bad request",
+		Message: "silly error",
+	}
+
+	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
+	c.Assert(err, jc.ErrorIsNil)
+	_, err = client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default", "default-budget", "inf")
+	c.Assert(err, gc.ErrorMatches, `failed to authorize plan: silly error \[bad request\]`)
+}
+
+func (s *clientIntegrationSuite) TestResellerAuthorize(c *gc.C) {
+	m, err := macaroon.New([]byte{}, "abc", "")
+	c.Assert(err, jc.ErrorIsNil)
+	s.httpClient.status = http.StatusOK
+	s.httpClient.body = m
+
+	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
+	c.Assert(err, jc.ErrorIsNil)
+	macaroon, err := client.AuthorizeReseller("canonical/jimm", "cs:~sabdf/jimm-0", "jimm", "sabdfl", "test-user")
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(macaroon, jc.DeepEquals, m)
+	s.httpClient.assertRequest(c, "POST", "/plan/reseller/authorize", wireformat.ResellerAuthorizationRequest{
+		Plan:             "canonical/jimm",
+		CharmURL:         "cs:~sabdf/jimm-0",
+		Application:      "jimm",
+		ApplicationOwner: "sabdfl",
+		ApplicationUser:  "test-user",
+	})
+}
+
+func (s *clientIntegrationSuite) TestResellerAuthorizeFail(c *gc.C) {
+	s.httpClient.status = http.StatusBadRequest
+	s.httpClient.body = struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}{
+		Code:    "bad request",
+		Message: "silly error",
+	}
+
+	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
+	c.Assert(err, jc.ErrorIsNil)
+	_, err = client.AuthorizeReseller("canonical/jimm", "cs:~sabdf/jimm-0", "jimm", "sabdfl", "test-user")
+	c.Assert(err, gc.ErrorMatches, `failed to authorize reseller plan: silly error \[bad request\]`)
 }
 
 type mockHttpClient struct {

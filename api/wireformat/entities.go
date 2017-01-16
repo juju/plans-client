@@ -6,10 +6,7 @@ package wireformat
 
 import (
 	"encoding/json"
-	"fmt"
 	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/juju/errors"
@@ -53,74 +50,15 @@ type PlanActive struct {
 // Plan structure is used as a wire format to store information on ISV-created
 // rating plan and charm URLs for which the plan is valid.
 type Plan struct {
-	Id              string     `json:"id"`         // Full id of the plan format
-	URL             string     `json:"url"`        // Name of the rating plan
-	Definition      string     `json:"plan"`       // The rating plan source
-	CreatedOn       string     `json:"created-on"` // When the plan was created - RFC3339 encoded timestamp
-	PlanDescription string     `json:"description"`
-	PlanPrice       string     `json:"price"`
-	Released        bool       `json:"released"`
-	EffectiveTime   *time.Time `json:"effective-time,omitempty"`
-}
-
-// ParsePlanURL returns the plan's owner and name.
-func ParsePlanURL(name string) (*PlanURL, error) {
-	var u *PlanURL
-	tokens := strings.Split(name, "/")
-	switch len(tokens) {
-	case 1:
-		u = &PlanURL{Owner: name}
-	case 2:
-		u = &PlanURL{Owner: tokens[0], Name: tokens[1]}
-	case 3:
-		revision, err := strconv.Atoi(tokens[2])
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to parse the plan revision")
-		}
-		u = &PlanURL{Owner: tokens[0], Name: tokens[1], Revision: revision}
-	default:
-		return nil, errors.New("invalid plan url format")
-	}
-	if err := u.Validate(); err != nil {
-		return nil, err
-	}
-	return u, nil
-}
-
-// PlanURL holds the components of a plan url.
-type PlanURL struct {
-	Owner    string
-	Name     string
-	Revision int
-}
-
-// Incomplete reports whether the plan url only specifies the owner.
-func (u PlanURL) Incomplete() bool {
-	return u.Name == ""
-}
-
-// String outputs the plan URL in a canonical form.
-func (u PlanURL) String() string {
-	if u.Revision == 0 {
-		return fmt.Sprintf("%s/%s", u.Owner, u.Name)
-	}
-	return fmt.Sprintf("%s/%s/%d", u.Owner, u.Name, u.Revision)
-}
-
-// StringNoRevision outputs the plan URL in a canonical revisionless form.
-func (u PlanURL) StringNoRevision() string {
-	return fmt.Sprintf("%s/%s", u.Owner, u.Name)
-}
-
-// Validate validates the plan URL.
-func (u PlanURL) Validate() error {
-	if !planURLComponentRe.MatchString(u.Owner) {
-		return errors.Errorf("invalid plan owner %q", u.Owner)
-	}
-	if u.Name != "" && !planURLComponentRe.MatchString(u.Name) {
-		return errors.Errorf("invalid plan name %q", u.Name)
-	}
-	return nil
+	Id              string      `json:"id"`         // Full id of the plan format
+	URL             string      `json:"url"`        // Name of the rating plan
+	Definition      string      `json:"plan"`       // The rating plan source
+	CreatedOn       string      `json:"created-on"` // When the plan was created - RFC3339 encoded timestamp
+	PlanDescription string      `json:"description"`
+	PlanPrice       string      `json:"price"`
+	Released        bool        `json:"released"`
+	EffectiveTime   *time.Time  `json:"effective-time,omitempty"`
+	Model           interface{} `json:"model,omitempty"` // The rating plan model
 }
 
 // UUIDResponse defines a response that just contains a uuid.
@@ -133,10 +71,8 @@ func (p Plan) Validate() error {
 	if p.URL == "" {
 		return errors.New("empty plan url")
 	}
-	if u, err := ParsePlanURL(p.URL); err != nil {
+	if _, err := ParsePlanURL(p.URL); err != nil {
 		return errors.Trace(err)
-	} else if u.Incomplete() {
-		return errors.New("invalid plan url format")
 	}
 
 	if p.Definition == "" {
@@ -199,17 +135,48 @@ func (s AuthorizationRequest) Validate() error {
 	if s.PlanURL == "" {
 		return errors.Errorf("undefined plan url")
 	}
-	if s.Budget == "" && s.Limit != "" {
-		return errors.Errorf("unspecified budget")
-	}
 	if s.Limit == "" && s.Budget != "" {
 		return errors.Errorf("unspecified limit")
 	}
 	return nil
 }
 
-// Authorization defines the struct containing information on an issued request
-// for an authorization macaroon.
+// TODO(api-compat): update tags above and remove this type when clients are ready.
+type authorizationV1 Authorization
+
+// ResellerAuthorizationRequest defines the struct resellers use to obtain
+// authorization credentials.
+type ResellerAuthorizationRequest struct {
+	Application string `json:"application"`
+	// The reseller of the application.
+	ApplicationOwner string `json:"application-owner"`
+	// User consuming resources provided by the application.
+	ApplicationUser string `json:"application-user"`
+	Plan            string `json:"plan"`
+	CharmURL        string `json:"charm-url"`
+}
+
+// Validate checks the ResellerAuthorizationRequest for errors.
+func (r ResellerAuthorizationRequest) Validate() error {
+	if r.Application == "" {
+		return errors.New("application not specified")
+	}
+	if r.ApplicationOwner == "" {
+		return errors.New("application owner not specified")
+	}
+	if r.ApplicationUser == "" {
+		return errors.New("application user not specified")
+	}
+	if r.Plan == "" {
+		return errors.New("plan not specified")
+	}
+	if r.CharmURL == "" {
+		return errors.New("charm url not specified")
+	}
+	return nil
+}
+
+// Authorization defines the struct containing information on an issued request for a plan authorization macaroon.
 type Authorization struct {
 	AuthorizationID string    `json:"authorization-id"` // TODO(cmars): rename to AuthUUID & auth-uuid
 	User            string    `json:"user"`
@@ -219,10 +186,9 @@ type Authorization struct {
 	ServiceName     string    `json:"service-name"`
 	CreatedOn       time.Time `json:"created-on"`
 	CredentialsID   string    `json:"credentials-id"`
+	PlanDefinition  string    `json:"plan-definition,omitempty"`
+	PlanID          string    `json:"plan-id,omitempty"`
 }
-
-// TODO(api-compat): update tags above and remove this type when clients are ready.
-type authorizationV1 Authorization
 
 // UnmarshalJSON implements a transitional json.Unmarshaler to allow
 // forward-compatible processing of fields renamed in Juju 2.0.
@@ -245,6 +211,21 @@ func (a *Authorization) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// ResellerAuthorization defines the struct containing information on an issued
+// reseller plan authorization.
+type ResellerAuthorization struct {
+	AuthUUID         string    `json:"auth-uuid"`
+	Plan             string    `json:"plan"`
+	CharmURL         string    `json:"charm-url"`
+	Application      string    `json:"application"`
+	ApplicationOwner string    `json:"owner"`
+	ApplicationUser  string    `json:"user"`
+	Credentials      []byte    `json:"credentials"`
+	CreatedOn        time.Time `json:"created-on"`
+	PlanDefinition   string    `json:"plan-definition,omitempty"`
+	PlanID           string    `json:"plan-id,omitempty"`
+}
+
 // AuthorizationQuery defines the struct used to query
 // authorization records.
 type AuthorizationQuery struct {
@@ -254,6 +235,8 @@ type AuthorizationQuery struct {
 	EnvironmentUUID string `json:"env-uuid"`
 	CharmURL        string `json:"charm-url"`
 	ServiceName     string `json:"service-name"`
+	IncludePlan     bool   `json:"include-plan"`
+	StatementPeriod string `json:"statement-period"`
 }
 
 // TODO(api-compat): update tags above and remove this type when clients are ready.
@@ -284,4 +267,26 @@ func (a *AuthorizationQuery) UnmarshalJSON(data []byte) error {
 type ServicePlanResponse struct {
 	CurrentPlan    string          `json:"current-plan"`
 	AvailablePlans map[string]Plan `json:"available-plans"`
+}
+
+// ResellerAuthorizationQuery defines the struct used to query
+// reseller authorization records.
+type ResellerAuthorizationQuery struct {
+	AuthUUID        string `json:"auth-uuid"`
+	Application     string `json:"application"`
+	Reseller        string `json:"reseller"`
+	User            string `json:"user"`
+	IncludePlan     bool   `json:"include-plan"`
+	StatementPeriod string `json:"statement-period"`
+}
+
+// Validate validates the ResellerAuthorizationQuery.
+func (q ResellerAuthorizationQuery) Validate() error {
+	if q.Reseller == "" {
+		if q.AuthUUID != "" {
+			return nil
+		}
+		return errors.BadRequestf("must specify the reseller name")
+	}
+	return nil
 }

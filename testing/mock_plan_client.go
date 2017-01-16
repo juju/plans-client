@@ -7,6 +7,7 @@ import (
 
 	"github.com/juju/errors"
 	jujutesting "github.com/juju/testing"
+	"gopkg.in/macaroon.v1"
 
 	"github.com/CanonicalLtd/plans-client/api"
 	"github.com/CanonicalLtd/plans-client/api/wireformat"
@@ -120,12 +121,12 @@ func (m *MockPlanClient) Get(planURL string) ([]wireformat.Plan, error) {
 
 // GetPlanRevisions returns all revisions of a plan.
 func (m *MockPlanClient) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
-	planURL, err := wireformat.ParsePlanURL(plan)
+	pID, err := wireformat.ParsePlanIDWithOptionalRevision(plan)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	if planURL.Revision != 0 {
-		return nil, errors.Errorf("plan revision specified where none was expected")
+	if pID.Revision != 0 {
+		return nil, errors.New("plan revision specified where none was expected")
 	}
 	m.MethodCall(m, "GetPlanRevisions", plan)
 	return m.PlanRevisions, nil
@@ -183,6 +184,27 @@ func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails
 			}},
 		}, m.NextErr()
 	}
+}
+
+// Authorize returns the authorization macaroon for the specified environment, charm url and service name.
+func (m *MockPlanClient) Authorize(environmentUUID, charmURL, serviceName, plan, budget, limit string) (*macaroon.Macaroon, error) {
+	panic("not implemented")
+}
+
+// AuthorizeReseller returns the reseller authorization macaroon for the specified application.
+func (m *MockPlanClient) AuthorizeReseller(plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error) {
+	panic("not implemented")
+}
+
+// GetAuthorizations returns a slice of Authorizations that match the
+// criteria specified in the query.
+func (m *MockPlanClient) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error) {
+	panic("not implemented")
+}
+
+// GetResellerAuthorizations retuns a slice of reseller Authorizations.
+func (m *MockPlanClient) GetResellerAuthorizations(query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error) {
+	panic("not implemented")
 }
 
 var _ api.PlanClient = (*MockPlanClient)(nil)
