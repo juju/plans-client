@@ -187,7 +187,7 @@ func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails
 }
 
 // Authorize returns the authorization macaroon for the specified environment, charm url and service name.
-func (m *MockPlanClient) Authorize(environmentUUID, charmURL, serviceName, plan, budget, limit string) (*macaroon.Macaroon, error) {
+func (m *MockPlanClient) Authorize(environmentUUID, charmURL, serviceName, plan string) (*macaroon.Macaroon, error) {
 	panic("not implemented")
 }
 
