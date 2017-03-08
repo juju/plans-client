@@ -471,7 +471,7 @@ func (s *clientIntegrationSuite) TestAuthorize(c *gc.C) {
 
 	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
 	c.Assert(err, jc.ErrorIsNil)
-	macaroon, err := client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default", "default-budget", "inf")
+	macaroon, err := client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(macaroon, jc.DeepEquals, m)
 	s.httpClient.assertRequest(c, "POST", "/plan/authorize", wireformat.AuthorizationRequest{
@@ -479,8 +479,6 @@ func (s *clientIntegrationSuite) TestAuthorize(c *gc.C) {
 		CharmURL:        "cs:~testers/charm1-0",
 		ServiceName:     "test-service",
 		PlanURL:         "testisv/default",
-		Budget:          "default-budget",
-		Limit:           "inf",
 	})
 }
 
@@ -496,7 +494,7 @@ func (s *clientIntegrationSuite) TestAuthorizeFail(c *gc.C) {
 
 	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
 	c.Assert(err, jc.ErrorIsNil)
-	_, err = client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default", "default-budget", "inf")
+	_, err = client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default")
 	c.Assert(err, gc.ErrorMatches, `failed to authorize plan: silly error \[bad request\]`)
 }
 

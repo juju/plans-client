@@ -87,8 +87,6 @@ type AuthorizationRequest struct {
 	CharmURL        string `json:"charm-url"`
 	ServiceName     string `json:"service-name"`
 	PlanURL         string `json:"plan-url"`
-	Budget          string `json:"budget"`
-	Limit           string `json:"limit"`
 }
 
 // TODO(api-compat): update tags above and remove this type when clients are ready.
@@ -134,9 +132,6 @@ func (s AuthorizationRequest) Validate() error {
 	}
 	if s.PlanURL == "" {
 		return errors.Errorf("undefined plan url")
-	}
-	if s.Limit == "" && s.Budget != "" {
-		return errors.Errorf("unspecified limit")
 	}
 	return nil
 }

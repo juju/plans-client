@@ -86,8 +86,6 @@ func (*suite) TestAuthorizationRequestValidation(c *gc.C) {
 			CharmURL:        "cs:wordpress",
 			ServiceName:     "wordpress",
 			PlanURL:         "test-isv/default",
-			Budget:          "personal",
-			Limit:           "100",
 		},
 		result: "",
 	}, {
@@ -97,8 +95,6 @@ func (*suite) TestAuthorizationRequestValidation(c *gc.C) {
 			CharmURL:        "cs:wordpress",
 			ServiceName:     "wordpress",
 			PlanURL:         "test-isv/default",
-			Budget:          "personal",
-			Limit:           "100",
 		},
 		result: "invalid environment UUID: \"abc\"",
 	}, {
@@ -107,8 +103,6 @@ func (*suite) TestAuthorizationRequestValidation(c *gc.C) {
 			EnvironmentUUID: utils.MustNewUUID().String(),
 			ServiceName:     "wordpress",
 			PlanURL:         "test-isv/default",
-			Budget:          "personal",
-			Limit:           "100",
 		},
 		result: "undefined charm url",
 	}, {
@@ -118,8 +112,6 @@ func (*suite) TestAuthorizationRequestValidation(c *gc.C) {
 			CharmURL:        "cs:wordpress",
 			ServiceName:     "wordpress/0",
 			PlanURL:         "test-isv/default",
-			Budget:          "personal",
-			Limit:           "100",
 		},
 		result: "invalid service name: \"wordpress/0\"",
 	}, {
@@ -129,8 +121,6 @@ func (*suite) TestAuthorizationRequestValidation(c *gc.C) {
 			CharmURL:        "http://my-charm.com",
 			ServiceName:     "wordpress",
 			PlanURL:         "test-isv/default",
-			Budget:          "personal",
-			Limit:           "100",
 		},
 		result: "invalid charm url: \"http://my-charm.com\"",
 	}, {
@@ -139,29 +129,8 @@ func (*suite) TestAuthorizationRequestValidation(c *gc.C) {
 			EnvironmentUUID: utils.MustNewUUID().String(),
 			CharmURL:        "cs:wordpress",
 			ServiceName:     "wordpress",
-			Budget:          "personal",
-			Limit:           "100",
 		},
 		result: "undefined plan url",
-	}, {
-		about: "missing limit",
-		request: wireformat.AuthorizationRequest{
-			EnvironmentUUID: utils.MustNewUUID().String(),
-			CharmURL:        "cs:wordpress",
-			ServiceName:     "wordpress",
-			PlanURL:         "test-isv/default",
-			Budget:          "personal",
-		},
-		result: "unspecified limit",
-	}, {
-		about: "missing limit and budget",
-		request: wireformat.AuthorizationRequest{
-			EnvironmentUUID: utils.MustNewUUID().String(),
-			CharmURL:        "cs:wordpress",
-			ServiceName:     "wordpress",
-			PlanURL:         "test-isv/default",
-		},
-		result: "",
 	}}
 	for i, test := range tests {
 		c.Logf("%d : %s", i, test.about)

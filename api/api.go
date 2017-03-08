@@ -44,7 +44,7 @@ type PlanClient interface {
 	// GetPlanRevisions returns all revision of a plan.
 	GetPlanRevisions(planURL string) ([]wireformat.Plan, error)
 	// Authorize returns the authorization macaroon for the specified environment, charm url and service name.
-	Authorize(environmentUUID, charmURL, serviceName, plan, budget, limit string) (*macaroon.Macaroon, error)
+	Authorize(environmentUUID, charmURL, serviceName, plan string) (*macaroon.Macaroon, error)
 	// AuthorizeReseller returns the reseller authorization macaroon for the specified application.
 	AuthorizeReseller(plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error)
 	// GetAuthorizations returns a slice of Authorizations that match the
@@ -465,7 +465,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 }
 
 // Authorize implements the AuthorizationClient.Authorize method.
-func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL, budget, limit string) (*macaroon.Macaroon, error) {
+func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL string) (*macaroon.Macaroon, error) {
 	u, err := url.Parse(c.plansService + "/plan/authorize")
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -476,8 +476,6 @@ func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL, budg
 		CharmURL:        charmURL,
 		ServiceName:     serviceName,
 		PlanURL:         planURL,
-		Budget:          budget,
-		Limit:           limit,
 	}
 
 	buff := &bytes.Buffer{}
