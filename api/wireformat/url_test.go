@@ -113,7 +113,7 @@ func (t *URLSuite) TestPlanIDParsing(c *gc.C) {
 	}, {
 		about: "non numerical revision",
 		url:   "owner/name/abc",
-		err:   `invalid revision format: strconv.ParseInt: parsing "abc": invalid syntax`,
+		err:   `invalid revision format: strconv.Atoi: parsing "abc": invalid syntax`,
 	}, {
 		about: "negative revision",
 		url:   "owner/name/-2",
@@ -129,7 +129,7 @@ func (t *URLSuite) TestPlanIDParsing(c *gc.C) {
 	}, {
 		about: "lots of spaces",
 		url:   "not an/ owner/plan",
-		err:   `invalid revision format: strconv.ParseInt: parsing "plan": invalid syntax`,
+		err:   `invalid revision format: strconv.Atoi: parsing "plan": invalid syntax`,
 	}, {
 		about: "bad name format",
 		url:   "owner/not a valid plan/0",
@@ -141,7 +141,7 @@ func (t *URLSuite) TestPlanIDParsing(c *gc.C) {
 	}, {
 		about: "all bad",
 		url:   "bad owner/bad name/hah",
-		err:   `invalid revision format: strconv.ParseInt: parsing "hah": invalid syntax`,
+		err:   `invalid revision format: strconv.Atoi: parsing "hah": invalid syntax`,
 	}, {
 		about: "no owner",
 		url:   "//name/6",
@@ -149,7 +149,7 @@ func (t *URLSuite) TestPlanIDParsing(c *gc.C) {
 	}, {
 		about: "no revision, extra slash",
 		url:   "bob/name/",
-		err:   `invalid revision format: strconv.ParseInt: parsing "": invalid syntax`,
+		err:   `invalid revision format: strconv.Atoi: parsing "": invalid syntax`,
 	},
 	}
 	for i, test := range tests {

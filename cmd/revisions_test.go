@@ -170,7 +170,7 @@ testisv/default/2	2015-02-01T01:00:00Z	2015-03-01 01:00:00 +0000 UTC
 		if ctx != nil {
 			if t.assertStdout != nil {
 				t.assertStdout(c, cmdtesting.Stdout(ctx))
-			} else {
+			} else if t.assertOutput != nil {
 				t.assertOutput(c, cmdtesting.Stdout(ctx))
 			}
 		}

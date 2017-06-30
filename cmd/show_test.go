@@ -276,7 +276,7 @@ cs:~testisv/charm2-1	   joe.jaas	                     2015-01-01 01:00:00 +0000 
 		if ctx != nil {
 			if t.assertStdout != nil {
 				t.assertStdout(c, cmdtesting.Stdout(ctx))
-			} else {
+			} else if t.assertOutput != nil {
 				t.assertOutput(c, cmdtesting.Stdout(ctx))
 			}
 		}
@@ -411,7 +411,7 @@ testisv/default/1
 		}
 		t.assertCalls(s.mockAPI.Stub)
 
-		if ctx != nil {
+		if ctx != nil && t.assertStdout != nil {
 			t.assertStdout(c, cmdtesting.Stdout(ctx))
 		}
 	}

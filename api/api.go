@@ -606,20 +606,33 @@ func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, a
 	return m, nil
 }
 
-// GetAuthorizations implements the PlanAuthorizationClient.GetAuthorizations interface.
+// GetResellerAuthorizations implements the PlanAuthorizationClient.GetResellerAuthorizations interface.
 func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/plan/reseller/%s/authorization", c.plansService, query.Reseller))
+	u, err := url.Parse(fmt.Sprintf("%s/plan/resellers/authorization", c.plansService))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	q := u.Query()
-	q.Set("auth-uuid", query.AuthUUID)
-	q.Set("user", query.User)
-	q.Set("application", query.Application)
+	if query.AuthUUID != "" {
+		q.Set("auth-uuid", query.AuthUUID)
+	}
+	if query.User != "" {
+		q.Set("user", query.User)
+	}
+	if query.Application != "" {
+		q.Set("application", query.Application)
+	}
+	if query.Reseller != "" {
+		q.Set("reseller", query.Reseller)
+	}
 	if query.IncludePlan {
 		q.Set("include-plan", strconv.FormatBool(query.IncludePlan))
 		q.Set("statement-period", query.StatementPeriod)
 	}
+	if len(q) == 0 {
+		return nil, errors.BadRequestf("empty reseller authorization query")
+	}
+
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest("GET", u.String(), nil)

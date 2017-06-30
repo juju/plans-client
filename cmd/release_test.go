@@ -40,9 +40,10 @@ func (s *releaseSuite) TestReleaseCommand(c *gc.C) {
 		stdout  string
 		apiCall []interface{}
 	}{{
-		about: "unrecognized args causes error",
-		args:  []string{"testisv/default", "foobar"},
-		err:   `unknown command line arguments: foobar`,
+		about:  "unrecognized args causes error",
+		args:   []string{"testisv/default", "foobar"},
+		stdout: "ERROR unknown command line arguments: foobar\n",
+		err:    `unknown command line arguments: foobar`,
 	}, {
 		about: "everything works",
 		args:  []string{"testisv/default", "--url", "localhost:0"},
