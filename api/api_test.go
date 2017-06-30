@@ -534,6 +534,34 @@ func (s *clientIntegrationSuite) TestResellerAuthorizeFail(c *gc.C) {
 	c.Assert(err, gc.ErrorMatches, `failed to authorize reseller plan: silly error`)
 }
 
+func (s *clientIntegrationSuite) TestGetResellerAuthorization(c *gc.C) {
+	s.httpClient.status = http.StatusOK
+	s.httpClient.body = []wireformat.ResellerAuthorization{{
+		AuthUUID: "blah-di-blah",
+	}}
+
+	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
+	c.Assert(err, jc.ErrorIsNil)
+	auths, err := client.GetResellerAuthorizations(wireformat.ResellerAuthorizationQuery{Reseller: "isv"})
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(auths, gc.HasLen, 1)
+	s.httpClient.assertRequest(c, "GET", "/plan/resellers/authorization?reseller=isv", nil)
+}
+
+func (s *clientIntegrationSuite) TestGetResellerAuthorizationEmptyQuery(c *gc.C) {
+	s.httpClient.status = http.StatusOK
+	s.httpClient.body = []wireformat.ResellerAuthorization{{
+		AuthUUID: "blah-di-blah",
+	}}
+
+	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
+	c.Assert(err, jc.ErrorIsNil)
+	auths, err := client.GetResellerAuthorizations(wireformat.ResellerAuthorizationQuery{})
+	c.Assert(err, gc.ErrorMatches, `empty reseller authorization query`)
+	c.Assert(auths, gc.HasLen, 0)
+	s.httpClient.assertNoRequest(c)
+}
+
 type mockHttpClient struct {
 	status        int
 	body          interface{}
@@ -599,4 +627,9 @@ func (m *mockHttpClient) assertRequest(c *gc.C, method, expectedURL, expectedBod
 	} else {
 		c.Assert(len(m.requestBody), gc.Equals, 0)
 	}
+}
+
+func (m *mockHttpClient) assertNoRequest(c *gc.C) {
+	c.Assert(m.requestMethod, gc.Equals, "")
+	c.Assert(m.requestURL, gc.Equals, "")
 }
