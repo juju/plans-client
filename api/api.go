@@ -215,6 +215,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to store the plan")
 	}
+	defer omniutils.DiscardClose(response)
 
 	err = omniutils.UnmarshalError("save plan", response)
 	if err != nil {
@@ -538,7 +539,7 @@ func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wiref
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve authorizations")
 	}
-	defer response.Body.Close()
+	defer omniutils.DiscardClose(response)
 
 	if response.StatusCode == http.StatusNotFound {
 		return []wireformat.Authorization{}, nil
@@ -644,7 +645,7 @@ func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizatio
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve authorizations")
 	}
-	defer response.Body.Close()
+	defer omniutils.DiscardClose(response)
 
 	err = omniutils.UnmarshalError("retrieve reseller authorizations", response)
 	if err != nil {
