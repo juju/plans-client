@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -118,7 +119,7 @@ func (c *client) Release(planURL string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to release the plan")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("release plan", response)
 	if err != nil {
@@ -175,7 +176,7 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 	if err != nil {
 		return errors.Annotate(err, "failed to resume the plan")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError(fmt.Sprintf("%s plan", operation), response)
 	if err != nil {
@@ -215,7 +216,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to store the plan")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("save plan", response)
 	if err != nil {
@@ -271,7 +272,7 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 	if err != nil {
 		return errors.Annotate(err, "failed to update plan")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("update plan", response)
 	if err != nil {
@@ -301,7 +302,7 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve matching plans")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 	err = omniutils.UnmarshalError("retrieve plans", response)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -340,7 +341,7 @@ func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve plan revisions")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 	err = omniutils.UnmarshalError("retrieve plan revisions", response)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -373,7 +374,7 @@ func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve default plan")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("retrieve default plan", response)
 	if err != nil {
@@ -407,7 +408,7 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve default plan")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("retrieve associated plans", response)
 	if err != nil {
@@ -449,7 +450,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve matching plans")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("retrieve plans", response)
 	if err != nil {
@@ -496,7 +497,7 @@ func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL strin
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("authorize plan", response)
 	if err != nil {
@@ -539,7 +540,7 @@ func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wiref
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve authorizations")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	if response.StatusCode == http.StatusNotFound {
 		return []wireformat.Authorization{}, nil
@@ -590,7 +591,7 @@ func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, a
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("authorize reseller plan", response)
 	if err != nil {
@@ -645,7 +646,7 @@ func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizatio
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve authorizations")
 	}
-	defer omniutils.DiscardClose(response)
+	defer discardClose(response)
 
 	err = omniutils.UnmarshalError("retrieve reseller authorizations", response)
 	if err != nil {
@@ -659,4 +660,48 @@ func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizatio
 		return nil, errors.Annotatef(err, "failed to unmarshal response")
 	}
 	return auths, nil
+}
+
+func discardClose(response *http.Response) {
+	if response == nil || response.Body == nil {
+		return
+	}
+	io.Copy(ioutil.Discard, response.Body)
+	response.Body.Close()
+}
+
+func unmarshalError(action string, response *http.Response) error {
+	if response.StatusCode != http.StatusOK {
+		data, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return errors.Errorf("failed to %s: received status code %d", action, response.StatusCode)
+		}
+		var e struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		}
+		err = json.Unmarshal(data, &e)
+		if err != nil {
+			return errors.Errorf("failed to %v: received status code %d and response %q", action, response.StatusCode, string(data))
+		}
+
+		msg := fmt.Sprintf("failed to %v", action)
+		retErr := fmt.Errorf(e.Message)
+
+		switch response.StatusCode {
+		case http.StatusNotFound:
+			return errors.NewNotFound(retErr, msg)
+		case http.StatusBadRequest:
+			return errors.NewBadRequest(retErr, msg)
+		case http.StatusNotImplemented:
+			return errors.NewNotImplemented(retErr, msg)
+		case http.StatusUnauthorized:
+			return errors.NewUnauthorized(retErr, msg)
+		case http.StatusConflict:
+			return errors.NewAlreadyExists(retErr, msg)
+		default:
+			return errors.Errorf("failed to %v: %v [%v]", action, e.Message, e.Code)
+		}
+	}
+	return nil
 }
