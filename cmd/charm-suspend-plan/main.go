@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package main
 
@@ -8,7 +9,7 @@ import (
 
 	"github.com/juju/cmd"
 
-	pcmd "github.com/CanonicalLtd/plans-client/cmd"
+	pcmd "github.com/juju/plans-client/cmd"
 )
 
 func main() {

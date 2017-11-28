@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package cmd_test
 
@@ -7,11 +8,11 @@ import (
 
 	jujucmd "github.com/juju/cmd"
 	"github.com/juju/cmd/cmdtesting"
+	"github.com/juju/gnuflag"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
-	"github.com/juju/gnuflag"
 
-	"github.com/CanonicalLtd/plans-client/cmd"
+	"github.com/juju/plans-client/cmd"
 )
 
 type baseCommandSuite struct {

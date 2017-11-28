@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package cmd
 
@@ -9,12 +10,12 @@ import (
 	"os"
 
 	"github.com/juju/cmd"
+	"github.com/juju/gnuflag"
 	"github.com/juju/idmclient/ussologin"
 	"github.com/juju/juju/juju/osenv"
 	"github.com/juju/juju/jujuclient"
 	"gopkg.in/juju/environschema.v1/form"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
-	"github.com/juju/gnuflag"
 )
 
 var (

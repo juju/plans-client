@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package cmd_test
 
@@ -12,9 +13,9 @@ import (
 	gc "gopkg.in/check.v1"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
 
-	"github.com/CanonicalLtd/plans-client/api"
-	"github.com/CanonicalLtd/plans-client/cmd"
-	plantesting "github.com/CanonicalLtd/plans-client/testing"
+	"github.com/juju/plans-client/api"
+	"github.com/juju/plans-client/cmd"
+	plantesting "github.com/juju/plans-client/testing"
 )
 
 type attachSuite struct {

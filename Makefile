@@ -1,6 +1,7 @@
-# Copyright 2016 Canonical Ltd.
+# Copyright 2017 Canonical Ltd.
+# # Licensed under the GPLv3, see LICENCE file for details.
 #
-PROJECT := github.com/CanonicalLtd/plans-client
+PROJECT := github.com/juju/plans-client
 
 ifndef GOBIN
 GOBIN := $(shell mkdir -p $(GOPATH)/bin; realpath $(GOPATH))/bin

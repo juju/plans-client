@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package wireformat_test
 
@@ -6,7 +7,7 @@ import (
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 
-	"github.com/CanonicalLtd/plans-client/api/wireformat"
+	"github.com/juju/plans-client/api/wireformat"
 )
 
 type URLSuite struct{}

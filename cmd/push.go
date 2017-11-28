@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package cmd
 
@@ -8,10 +9,10 @@ import (
 
 	"github.com/juju/cmd"
 	"github.com/juju/errors"
-	"gopkg.in/macaroon-bakery.v1/httpbakery"
 	"github.com/juju/gnuflag"
+	"gopkg.in/macaroon-bakery.v1/httpbakery"
 
-	"github.com/CanonicalLtd/plans-client/api"
+	"github.com/juju/plans-client/api"
 )
 
 const pushDoc = `

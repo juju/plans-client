@@ -1,4 +1,5 @@
-// Copyright 2014 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package api_test
 
@@ -17,8 +18,8 @@ import (
 	gc "gopkg.in/check.v1"
 	"gopkg.in/macaroon.v1"
 
-	"github.com/CanonicalLtd/plans-client/api"
-	"github.com/CanonicalLtd/plans-client/api/wireformat"
+	"github.com/juju/plans-client/api"
+	"github.com/juju/plans-client/api/wireformat"
 )
 
 func Test(t *stdtesting.T) {

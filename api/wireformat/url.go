@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package wireformat
 

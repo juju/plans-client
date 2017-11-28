@@ -1,4 +1,5 @@
-// Copyright 2014 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 // wireformat package contains wireformat structs intended for
 // plan management API.

@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package cmd
 
@@ -11,7 +12,7 @@ import (
 	"github.com/juju/errors"
 	"github.com/juju/gnuflag"
 
-	"github.com/CanonicalLtd/plans-client/api/wireformat"
+	"github.com/juju/plans-client/api/wireformat"
 )
 
 const showPlanRevisionsDoc = `
