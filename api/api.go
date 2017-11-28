@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.  All rights reserved.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 // Package api defines the plan management API.
 package api
@@ -13,12 +14,11 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/CanonicalLtd/omniutils"
 	"github.com/juju/errors"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
 	"gopkg.in/macaroon.v1"
 
-	"github.com/CanonicalLtd/plans-client/api/wireformat"
+	"github.com/juju/plans-client/api/wireformat"
 )
 
 // PlanClient defines the interface available to clients of the plan api.
@@ -121,7 +121,7 @@ func (c *client) Release(planURL string) (*wireformat.Plan, error) {
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("release plan", response)
+	err = unmarshalError("release plan", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -178,7 +178,7 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError(fmt.Sprintf("%s plan", operation), response)
+	err = unmarshalError(fmt.Sprintf("%s plan", operation), response)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -218,7 +218,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("save plan", response)
+	err = unmarshalError("save plan", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -274,7 +274,7 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("update plan", response)
+	err = unmarshalError("update plan", response)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -303,7 +303,7 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 		return nil, errors.Annotate(err, "failed to retrieve matching plans")
 	}
 	defer discardClose(response)
-	err = omniutils.UnmarshalError("retrieve plans", response)
+	err = unmarshalError("retrieve plans", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -342,7 +342,7 @@ func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
 		return nil, errors.Annotate(err, "failed to retrieve plan revisions")
 	}
 	defer discardClose(response)
-	err = omniutils.UnmarshalError("retrieve plan revisions", response)
+	err = unmarshalError("retrieve plan revisions", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -376,7 +376,7 @@ func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("retrieve default plan", response)
+	err = unmarshalError("retrieve default plan", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -410,7 +410,7 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("retrieve associated plans", response)
+	err = unmarshalError("retrieve associated plans", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -452,7 +452,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("retrieve plans", response)
+	err = unmarshalError("retrieve plans", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -499,7 +499,7 @@ func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL strin
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("authorize plan", response)
+	err = unmarshalError("authorize plan", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -545,7 +545,7 @@ func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wiref
 	if response.StatusCode == http.StatusNotFound {
 		return []wireformat.Authorization{}, nil
 	}
-	err = omniutils.UnmarshalError("retrieve authorizations", response)
+	err = unmarshalError("retrieve authorizations", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -593,7 +593,7 @@ func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, a
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("authorize reseller plan", response)
+	err = unmarshalError("authorize reseller plan", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -648,7 +648,7 @@ func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizatio
 	}
 	defer discardClose(response)
 
-	err = omniutils.UnmarshalError("retrieve reseller authorizations", response)
+	err = unmarshalError("retrieve reseller authorizations", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}

@@ -1,4 +1,5 @@
-// Copyright 2016 Canonical Ltd.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package testing_test
 
@@ -7,7 +8,7 @@ import (
 
 	gc "gopkg.in/check.v1"
 
-	t "github.com/CanonicalLtd/plans-client/testing"
+	t "github.com/juju/plans-client/testing"
 )
 
 func Test(t *testing.T) {

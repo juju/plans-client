@@ -1,4 +1,5 @@
-// Copyright 2015 Canonical Ltd.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package wireformat_test
 
@@ -8,7 +9,7 @@ import (
 	"github.com/juju/utils"
 	gc "gopkg.in/check.v1"
 
-	"github.com/CanonicalLtd/plans-client/api/wireformat"
+	"github.com/juju/plans-client/api/wireformat"
 )
 
 const PingPlan = `

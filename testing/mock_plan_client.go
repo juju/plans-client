@@ -1,4 +1,5 @@
-// Copyright 2015 Canonical Ltd.
+// Copyright 2017 Canonical Ltd.
+// Licensed under the GPLv3, see LICENCE file for details.
 
 package testing
 
@@ -9,8 +10,8 @@ import (
 	jujutesting "github.com/juju/testing"
 	"gopkg.in/macaroon.v1"
 
-	"github.com/CanonicalLtd/plans-client/api"
-	"github.com/CanonicalLtd/plans-client/api/wireformat"
+	"github.com/juju/plans-client/api"
+	"github.com/juju/plans-client/api/wireformat"
 )
 
 var TestPlan = `
