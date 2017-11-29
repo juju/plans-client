@@ -40,7 +40,7 @@ type ShowCommand struct {
 
 // NewShowCommand creates a new ShowCommand.
 func NewShowCommand() cmd.Command {
-	return WrapPlugin(&ShowCommand{})
+	return &ShowCommand{}
 }
 
 // SetFlags implements Command.SetFlags.

@@ -36,7 +36,7 @@ type ShowRevisionsCommand struct {
 
 // NewShowRevisionsCommand creates a new ShowRevisionsCommand.
 func NewShowRevisionsCommand() cmd.Command {
-	return WrapPlugin(&ShowRevisionsCommand{})
+	return &ShowRevisionsCommand{}
 }
 
 // SetFlags implements Command.SetFlags.

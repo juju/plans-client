@@ -17,10 +17,10 @@ const resumePlanPurpose = "resumes plan for specified charms"
 
 // NewResumeCommand creates a new resumeCommand.
 func NewResumeCommand() cmd.Command {
-	return WrapPlugin(&suspendResumeCommand{
+	return &suspendResumeCommand{
 		op:      resumeOp,
 		name:    "resume-plan",
 		purpose: resumePlanPurpose,
 		doc:     resumePlanDoc,
-	})
+	}
 }

@@ -32,7 +32,7 @@ var (
 
 // NewPushCommand returns a new PushCommand.
 func NewPushCommand() cmd.Command {
-	return WrapPlugin(&PushCommand{})
+	return &PushCommand{}
 }
 
 // PushCommand uploads a new plan to the plans service

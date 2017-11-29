@@ -39,9 +39,9 @@ type AttachCommand struct {
 
 // NewAttachCommand creates a new AttachCommand.
 func NewAttachCommand() cmd.Command {
-	return WrapPlugin(&AttachCommand{
+	return &AttachCommand{
 		CharmResolver: NewCharmStoreResolver(),
-	})
+	}
 }
 
 // SetFlags implements Command.SetFlags.

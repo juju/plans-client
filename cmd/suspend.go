@@ -20,12 +20,12 @@ const suspendPlanPurpose = "suspends plan for specified charms"
 // NewSuspendCommand creates a new command that can
 // be used to suspend plans.
 func NewSuspendCommand() cmd.Command {
-	return WrapPlugin(&suspendResumeCommand{
+	return &suspendResumeCommand{
 		op:      suspendOp,
 		name:    "suspend-plan",
 		purpose: suspendPlanPurpose,
 		doc:     suspendPlanDoc,
-	})
+	}
 }
 
 type operation string

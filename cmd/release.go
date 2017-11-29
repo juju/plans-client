@@ -29,7 +29,7 @@ type ReleaseCommand struct {
 
 // NewReleaseCommand creates a new ReleaseCommand.
 func NewReleaseCommand() cmd.Command {
-	return WrapPlugin(&ReleaseCommand{})
+	return &ReleaseCommand{}
 }
 
 // SetFlags implements Command.SetFlags.
