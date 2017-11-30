@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/juju/errors"
+	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
 	"gopkg.in/macaroon.v1"
@@ -83,6 +84,13 @@ func (s *clientIntegrationSuite) TestSaveFail(c *gc.C) {
 	c.Assert(err, gc.ErrorMatches, `failed to save plan: silly error`)
 }
 
+func (s *clientIntegrationSuite) TestSaveUnauthorized(c *gc.C) {
+	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
+
+	_, err := s.planClient.Save("testisv/default", testPlan)
+	c.Assert(err, gc.ErrorMatches, `unauthorized to save the plan: please run "charm whoami" to verify you are member of the "testisv" group`)
+}
+
 func (s *clientIntegrationSuite) TestRelease(c *gc.C) {
 	p := wireformat.Plan{
 		URL:        "testisv/default",
@@ -114,6 +122,13 @@ func (s *clientIntegrationSuite) TestReleaseFail(c *gc.C) {
 
 	_, err := s.planClient.Release("testisv/default/1")
 	c.Assert(err, gc.ErrorMatches, `failed to release plan: silly error`)
+}
+
+func (s *clientIntegrationSuite) TestReleaseUnauthorized(c *gc.C) {
+	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
+
+	_, err := s.planClient.Release("testisv/default/1")
+	c.Assert(err, gc.ErrorMatches, `unauthorized to release the plan: only members of the administrator group are allowed to release plans`)
 }
 
 func (s *clientIntegrationSuite) TestSuspend(c *gc.C) {
@@ -208,6 +223,13 @@ func (s *clientIntegrationSuite) TestResumeFail(c *gc.C) {
 	c.Assert(err, gc.ErrorMatches, `failed to resume plan: silly error`)
 }
 
+func (s *clientIntegrationSuite) TestResumeUnauthorized(c *gc.C) {
+	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
+
+	err := s.planClient.Resume("testisv/default", true)
+	c.Assert(err, gc.ErrorMatches, `unauthorized to resume plan: please run "charm whoami" to verify you are member of the "testisv" group`)
+}
+
 func (s *clientIntegrationSuite) TestAddCharm(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 
@@ -224,6 +246,13 @@ func (s *clientIntegrationSuite) TestAddCharm(c *gc.C) {
 	})
 }
 
+func (s *clientIntegrationSuite) TestAddCharmUnauthorized(c *gc.C) {
+	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
+
+	err := s.planClient.AddCharm("testisv/default", "cs:~testers/charm1-0", true)
+	c.Assert(err, gc.ErrorMatches, `unauthorized to add charm: please run "charm whoami" to verify you are member of the "testisv" group`)
+}
+
 func (s *clientIntegrationSuite) TestAddCharmFail(c *gc.C) {
 	s.httpClient.status = http.StatusBadRequest
 	s.httpClient.body = struct {
@@ -235,7 +264,7 @@ func (s *clientIntegrationSuite) TestAddCharmFail(c *gc.C) {
 	}
 
 	err := s.planClient.AddCharm("testisv/default", "cs:~testers/charm1-0", false)
-	c.Assert(err, gc.ErrorMatches, `failed to update plan: silly error`)
+	c.Assert(err, gc.ErrorMatches, `failed to add charm: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGet(c *gc.C) {
@@ -407,7 +436,14 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsFail(c *gc.C) {
 	}
 
 	_, err := s.planClient.GetPlanDetails("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error`)
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details: silly error`)
+}
+
+func (s *clientIntegrationSuite) TestGetPlanDetailsUnauthorized(c *gc.C) {
+	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
+
+	_, err := s.planClient.GetPlanDetails("testisv/default")
+	c.Assert(err, gc.ErrorMatches, `unauthorized to retrieve plan details: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanDetailsNotFound(c *gc.C) {
@@ -421,7 +457,7 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsNotFound(c *gc.C) {
 	}
 
 	_, err := s.planClient.GetPlanDetails("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error`)
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestSuspendResumeFailsWithPlanRevision(c *gc.C) {
@@ -429,6 +465,13 @@ func (s *clientIntegrationSuite) TestSuspendResumeFailsWithPlanRevision(c *gc.C)
 	c.Assert(err, gc.ErrorMatches, `plan url "testisv/default/1" not valid`)
 	err = s.planClient.Suspend("testisv/default/1", false, "cs:~testers/charm1-0")
 	c.Assert(err, gc.ErrorMatches, `plan url "testisv/default/1" not valid`)
+}
+
+func (s *clientIntegrationSuite) TestSuspendUnauthorized(c *gc.C) {
+	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
+
+	err := s.planClient.Suspend("testisv/default", true)
+	c.Assert(err, gc.ErrorMatches, `unauthorized to suspend plan: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanRevisions(c *gc.C) {
@@ -462,6 +505,13 @@ func (s *clientIntegrationSuite) TestGetPlanRevisionsFail(c *gc.C) {
 
 	_, err := s.planClient.GetPlanRevisions("testisv/default")
 	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan revisions: silly error`)
+}
+
+func (s *clientIntegrationSuite) TestGetPlanRevisionsUnauthorized(c *gc.C) {
+	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
+
+	_, err := s.planClient.GetPlanRevisions("testisv/default")
+	c.Assert(err, gc.ErrorMatches, `unauthorized to retrieve plan revisions: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
 func (s *clientIntegrationSuite) TestAuthorize(c *gc.C) {
@@ -564,6 +614,7 @@ func (s *clientIntegrationSuite) TestGetResellerAuthorizationEmptyQuery(c *gc.C)
 }
 
 type mockHttpClient struct {
+	testing.Stub
 	status        int
 	body          interface{}
 	requestMethod string
@@ -592,7 +643,7 @@ func (m *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Body:       ioutil.NopCloser(bytes.NewReader(data)),
-	}, nil
+	}, m.NextErr()
 }
 
 func (m *mockHttpClient) DoWithBody(req *http.Request, body io.ReadSeeker) (*http.Response, error) {
@@ -617,7 +668,7 @@ func (m *mockHttpClient) DoWithBody(req *http.Request, body io.ReadSeeker) (*htt
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Body:       ioutil.NopCloser(bytes.NewReader(data)),
-	}, nil
+	}, m.NextErr()
 }
 
 func (m *mockHttpClient) assertRequest(c *gc.C, method, expectedURL, expectedBody interface{}) {

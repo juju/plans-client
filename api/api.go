@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/juju/errors"
 	"gopkg.in/macaroon-bakery.v1/httpbakery"
@@ -39,7 +40,7 @@ type PlanClient interface {
 	// Resume resumes the plan for specified charms.
 	Resume(planURL string, all bool, charmURLs ...string) error
 	// Release releases the specified plan.
-	Release(planURL string) (*wireformat.Plan, error)
+	Release(planID string) (*wireformat.Plan, error)
 	// GetPlanDetails returns detailed information about a plan.
 	GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 	// GetPlanRevisions returns all revision of a plan.
@@ -98,8 +99,8 @@ func NewPlanClient(url string, options ...ClientOption) (*client, error) {
 }
 
 // Release releases the specified plan.
-func (c *client) Release(planURL string) (*wireformat.Plan, error) {
-	pID, err := wireformat.ParsePlanID(planURL)
+func (c *client) Release(planID string) (*wireformat.Plan, error) {
+	pID, err := wireformat.ParsePlanID(planID)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -117,6 +118,9 @@ func (c *client) Release(planURL string) (*wireformat.Plan, error) {
 
 	response, err := c.client.Do(req)
 	if err != nil {
+		if strings.Contains(err.Error(), "refused discharge") {
+			return nil, errors.Errorf(`unauthorized to release the plan: only members of the administrator group are allowed to release plans`)
+		}
 		return nil, errors.Annotate(err, "failed to release the plan")
 	}
 	defer discardClose(response)
@@ -174,6 +178,10 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(data))
 	if err != nil {
+		if strings.Contains(err.Error(), "refused discharge") {
+			return errors.Errorf(`unauthorized to %s plan: please run "charm whoami" to verify you are member of the %q group`, operation, pURL.Owner)
+		}
+
 		return errors.Annotate(err, "failed to resume the plan")
 	}
 	defer discardClose(response)
@@ -189,7 +197,7 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 // Save stores the rating plan definition (definition - plan definition yaml) under a
 // specified name (planURL).
 func (c *client) Save(planURL string, definition string) (*wireformat.Plan, error) {
-	_, err := wireformat.ParsePlanURL(planURL)
+	pURL, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -214,7 +222,10 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(payload.Bytes()))
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to store the plan")
+		if strings.Contains(err.Error(), "refused discharge") {
+			return nil, errors.Errorf(`unauthorized to save the plan: please run "charm whoami" to verify you are member of the %q group`, pURL.Owner)
+		}
+		return nil, errors.Annotate(err, "failed to save the plan")
 	}
 	defer discardClose(response)
 
@@ -236,7 +247,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 // AddCharm adds the specified charm to all plans matching the criteria.
 // If uuid is defined, both, the isvname and planname may be empty ("").
 func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error {
-	_, err := wireformat.ParsePlanURL(planURL)
+	pURL, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -270,11 +281,14 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(payload.Bytes()))
 	if err != nil {
-		return errors.Annotate(err, "failed to update plan")
+		if strings.Contains(err.Error(), "refused discharge") {
+			return errors.Errorf(`unauthorized to add charm: please run "charm whoami" to verify you are member of the %q group`, pURL.Owner)
+		}
+		return errors.Annotate(err, "failed to add charm")
 	}
 	defer discardClose(response)
 
-	err = unmarshalError("update plan", response)
+	err = unmarshalError("add charm", response)
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -339,6 +353,9 @@ func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
 
 	response, err := c.client.Do(req)
 	if err != nil {
+		if strings.Contains(err.Error(), "refused discharge") {
+			return nil, errors.Errorf(`unauthorized to retrieve plan revisions: please run "charm whoami" to verify you are member of the %q group`, planID.Owner)
+		}
 		return nil, errors.Annotate(err, "failed to retrieve plan revisions")
 	}
 	defer discardClose(response)
@@ -448,11 +465,14 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 
 	response, err := c.client.Do(req)
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to retrieve matching plans")
+		if strings.Contains(err.Error(), "refused discharge") {
+			return nil, errors.Errorf(`unauthorized to retrieve plan details: please run "charm whoami" to verify you are member of the %q group`, purl.Owner)
+		}
+		return nil, errors.Annotate(err, "failed to retrieve plan details")
 	}
 	defer discardClose(response)
 
-	err = unmarshalError("retrieve plans", response)
+	err = unmarshalError("retrieve plan details", response)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
