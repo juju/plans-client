@@ -34,6 +34,7 @@ type MockPlanClient struct {
 	*jujutesting.Stub
 	PlanDetails   *wireformat.PlanDetails
 	PlanRevisions []wireformat.Plan
+	Plans         []wireformat.Plan
 	Released      bool
 }
 
@@ -42,6 +43,12 @@ func NewMockPlanClient() *MockPlanClient {
 	return &MockPlanClient{
 		Stub: &jujutesting.Stub{},
 	}
+}
+
+// GetPlans returns plans owned by the specified owner.
+func (m *MockPlanClient) GetPlans(owner string) ([]wireformat.Plan, error) {
+	m.MethodCall(m, "GetPlans", owner)
+	return m.Plans, m.NextErr()
 }
 
 // Release releases the specified plan.

@@ -295,6 +295,46 @@ func (s *clientIntegrationSuite) TestGetFail(c *gc.C) {
 	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error`)
 }
 
+func (s *clientIntegrationSuite) TestGetPlans(c *gc.C) {
+	p1 := wireformat.Plan{
+		Id:         "testisv/default/2",
+		URL:        "testisv/default",
+		Definition: testPlan,
+	}
+	p2 := wireformat.Plan{
+		Id:         "testisv/default/1",
+		URL:        "testisv/default",
+		Definition: testPlan,
+	}
+	p3 := wireformat.Plan{
+		Id:         "testisv/another/1",
+		URL:        "testisv/another",
+		Definition: testPlan,
+	}
+	plans := []wireformat.Plan{p1, p2, p3}
+	s.httpClient.status = http.StatusOK
+	s.httpClient.body = plans
+
+	response, err := s.planClient.GetPlans("testisv")
+	c.Assert(err, jc.ErrorIsNil)
+	c.Assert(response, gc.DeepEquals, []wireformat.Plan{p1, p2, p3})
+	s.httpClient.assertRequest(c, "GET", "/p/testisv", nil)
+}
+
+func (s *clientIntegrationSuite) TestGetPlansFail(c *gc.C) {
+	s.httpClient.status = http.StatusBadRequest
+	s.httpClient.body = struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}{
+		Code:    "bad request",
+		Message: "silly error",
+	}
+
+	_, err := s.planClient.GetPlans("testisv")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error`)
+}
+
 func (s *clientIntegrationSuite) TestGetDefaultPlan(c *gc.C) {
 	plan := wireformat.Plan{
 		URL:        "testisv/default",
