@@ -56,6 +56,7 @@ effective from 01 Jan 16 01:00 UTC
 	}
 
 	for i, t := range tests {
+		s.mockAPI.ResetCalls()
 		c.Logf("Running test %d %s", i, t.about)
 		ctx, err := cmdtesting.RunCommand(c, cmd.NewReleaseCommand(), t.args...)
 		if t.err != "" {

@@ -119,7 +119,7 @@ func (c *client) Release(planID string) (*wireformat.Plan, error) {
 	response, err := c.client.Do(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "refused discharge") {
-			return nil, errors.Errorf(`unauthorized to release the plan: only members of the administrator group are allowed to release plans`)
+			return nil, errors.Annotate(err, `release-plan is currently disabled for public use. Please ask in #juju-partners on freenode or email juju@lists.ubuntu.com`)
 		}
 		return nil, errors.Annotate(err, "failed to release the plan")
 	}
