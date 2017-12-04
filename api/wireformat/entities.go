@@ -51,15 +51,15 @@ type PlanActive struct {
 // Plan structure is used as a wire format to store information on ISV-created
 // rating plan and charm URLs for which the plan is valid.
 type Plan struct {
-	Id              string      `json:"id"`         // Full id of the plan format
-	URL             string      `json:"url"`        // Name of the rating plan
-	Definition      string      `json:"plan"`       // The rating plan source
-	CreatedOn       string      `json:"created-on"` // When the plan was created - RFC3339 encoded timestamp
-	PlanDescription string      `json:"description"`
-	PlanPrice       string      `json:"price"`
-	Released        bool        `json:"released"`
-	EffectiveTime   *time.Time  `json:"effective-time,omitempty"`
-	Model           interface{} `json:"model,omitempty"` // The rating plan model
+	Id              string      `json:"id" yaml:"id"`                 // Full id of the plan format
+	URL             string      `json:"url" yaml:"url"`               // Name of the rating plan
+	Definition      string      `json:"plan" yaml:"plan"`             // The rating plan source
+	CreatedOn       string      `json:"created-on" yaml:"created-on"` // When the plan was created - RFC3339 encoded timestamp
+	PlanDescription string      `json:"description" yaml:"description"`
+	PlanPrice       string      `json:"price" yaml:"price"`
+	Released        bool        `json:"released" yaml:"released"`
+	EffectiveTime   *time.Time  `json:"effective-time,omitempty" yaml:"effective-on,omitempty"`
+	Model           interface{} `json:"model,omitempty" yaml:"model,omitempty"` // The rating plan model
 }
 
 // UUIDResponse defines a response that just contains a uuid.

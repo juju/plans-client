@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -31,6 +32,8 @@ type PlanClient interface {
 	// Get returns a slice of Plans that match the stated criteria, namely
 	// the plan URL, owner of the plan or an associated charm url.
 	Get(planURL string) ([]wireformat.Plan, error)
+	// GetPlans returns a slice of plans owned by user or group.
+	GetPlans(owner string) ([]wireformat.Plan, error)
 	// GetDefaultPlan returns the default plan associated with the charm.
 	GetDefaultPlan(charmURL string) (*wireformat.Plan, error)
 	// GetPlansForCharm returns the plans associated with the charm.
@@ -328,6 +331,40 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotatef(err, "failed to unmarshal the response")
 	}
+	return plans, nil
+}
+
+// GetPlans returns a plans owned by the user or group.
+func (c *client) GetPlans(owner string) ([]wireformat.Plan, error) {
+	u, err := url.Parse(c.plansService + "/p/" + owner)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to create a GET request")
+	}
+
+	response, err := c.client.Do(req)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to retrieve plans")
+	}
+	defer discardClose(response)
+	err = unmarshalError("retrieve plans", response)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	var plans []wireformat.Plan
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(&plans)
+	if err != nil {
+		return nil, errors.Annotatef(err, "failed to unmarshal the response")
+	}
+	sort.Slice(plans, func(i, j int) bool {
+		return plans[i].Id > plans[j].Id
+	})
 	return plans, nil
 }
 
