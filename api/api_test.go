@@ -128,7 +128,7 @@ func (s *clientIntegrationSuite) TestReleaseUnauthorized(c *gc.C) {
 	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
 
 	_, err := s.planClient.Release("testisv/default/1")
-	c.Assert(err, gc.ErrorMatches, `unauthorized to release the plan: only members of the administrator group are allowed to release plans`)
+	c.Assert(err, gc.ErrorMatches, `release-plan is currently disabled for public use. Please ask in #juju-partners on freenode or email juju@lists.ubuntu.com: refused discharge: unauthorized`)
 }
 
 func (s *clientIntegrationSuite) TestSuspend(c *gc.C) {
