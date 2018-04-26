@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	defaultURL = "https://api.jujucharms.com/omnibus/v2"
+	defaultURL = "https://api.jujucharms.com/omnibus"
 	readFile   = ioutil.ReadFile
 )
 
