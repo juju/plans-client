@@ -18,13 +18,13 @@ import (
 )
 
 var (
-	defaultURL = "https://api.jujucharms.com/omnibus/v2"
+	defaultURL = "https://api.jujucharms.com/omnibus/v3"
 	readFile   = ioutil.ReadFile
 )
 
 // defaultServiceURL returns the default public URL for plans clients.
 func defaultServiceURL() string {
-	obURL := os.Getenv("OB_URL")
+	obURL := os.Getenv("JUJU_PLANS")
 	if obURL != "" {
 		return obURL
 	}
