@@ -89,10 +89,11 @@ func (c *ShowCommand) Init(args []string) error {
 // Run implements Command.Run.
 func (c *ShowCommand) Run(ctx *cmd.Context) error {
 	defer c.Close()
-	client, err := c.NewClient()
+	client, cleanup, err := c.NewClient(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to create an http client")
 	}
+	defer cleanup()
 	apiClient, err := newClient(c.ServiceURL, client)
 	if err != nil {
 		return errors.Annotate(err, "failed to create a plan API client")

@@ -78,11 +78,16 @@ func (c *AttachCommand) Init(args []string) error {
 		return errors.Errorf("unknown command line arguments: " + strings.Join(args, ","))
 	}
 
+	ctx, err := cmd.DefaultContext()
+	if err != nil {
+		return errors.Trace(err)
+	}
 	c.PlanURL = planURL
-	client, err := c.NewClient()
+	client, cleanup, err := c.NewClient(ctx)
 	if err != nil {
 		return errors.Annotate(err, "could not create API client")
 	}
+	defer cleanup()
 	resolved, err := c.CharmResolver.Resolve(client.Client, client.VisitWebPage, charmURL)
 	if err != nil {
 		return errors.Annotate(err, "could not resolve charm url")
@@ -106,10 +111,11 @@ func (c *AttachCommand) Init(args []string) error {
 // Run implements Command.Run.
 func (c *AttachCommand) Run(ctx *cmd.Context) error {
 	defer c.Close()
-	client, err := c.NewClient()
+	client, cleanup, err := c.NewClient(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to create an http client")
 	}
+	defer cleanup()
 	apiClient, err := newClient(c.ServiceURL, client)
 	if err != nil {
 		return errors.Annotate(err, "failed to create a plan API client")

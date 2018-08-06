@@ -88,10 +88,11 @@ func (c *PushCommand) Run(ctx *cmd.Context) error {
 		return errors.Annotatef(err, "could not read the rating plan from file %q", c.Filename)
 	}
 
-	client, err := c.NewClient()
+	client, cleanup, err := c.NewClient(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to create an http client")
 	}
+	defer cleanup()
 
 	apiClient, err := newClient(c.ServiceURL, client)
 	if err != nil {
