@@ -61,8 +61,9 @@ func (s *baseCommandSuite) TestNewClient(c *gc.C) {
 	_, err := cmdtesting.RunCommand(c, basecmd, "--url", obEndpoint)
 	c.Assert(err, jc.ErrorIsNil)
 
-	client, err := basecmd.NewClient()
+	client, cleanup, err := basecmd.NewClient(cmdtesting.Context(c))
 	c.Assert(err, jc.ErrorIsNil)
+	defer cleanup()
 	c.Assert(client, gc.NotNil)
 }
 
@@ -74,7 +75,8 @@ func (s *baseCommandSuite) TestNewClientNoHttps(c *gc.C) {
 	_, err := cmdtesting.RunCommand(c, basecmd, "--url", obEndpoint)
 	c.Assert(err, jc.ErrorIsNil)
 
-	client, err := basecmd.NewClient()
+	client, cleanup, err := basecmd.NewClient(cmdtesting.Context(c))
 	c.Assert(err, jc.ErrorIsNil)
+	defer cleanup()
 	c.Assert(client.Transport, gc.IsNil)
 }

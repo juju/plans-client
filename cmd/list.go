@@ -75,10 +75,11 @@ func (c *ListPlansCommand) Init(args []string) error {
 // Run implements Command.Run.
 // Uploads a new plan to the plan service
 func (c *ListPlansCommand) Run(ctx *cmd.Context) error {
-	client, err := c.NewClient()
+	client, cleanup, err := c.NewClient(ctx)
 	if err != nil {
 		return errors.Annotate(err, "failed to create an http client")
 	}
+	defer cleanup()
 
 	apiClient, err := newClient(c.ServiceURL, client)
 	if err != nil {
