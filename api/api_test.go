@@ -64,7 +64,7 @@ func (s *clientIntegrationSuite) TestSave(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(plan.Id, gc.Equals, "testisv/default/1")
 
-	s.httpClient.assertRequest(c, "POST", "/p", wireformat.Plan{
+	s.httpClient.assertRequest(c, "POST", "/v3/p", wireformat.Plan{
 		URL:        "testisv/default",
 		Definition: testPlan,
 	})
@@ -102,7 +102,7 @@ func (s *clientIntegrationSuite) TestRelease(c *gc.C) {
 	plan, err := s.planClient.Release("testisv/default/1")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(plan, gc.DeepEquals, &p)
-	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/1/release", nil)
+	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/1/release", nil)
 }
 
 func (s *clientIntegrationSuite) TestReleaseInvalidPlanURL(c *gc.C) {
@@ -136,7 +136,7 @@ func (s *clientIntegrationSuite) TestSuspend(c *gc.C) {
 
 	err := s.planClient.Suspend("testisv/default", false, "testisv/plan1", "testisv/plan2")
 	c.Assert(err, jc.ErrorIsNil)
-	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/suspend", struct {
+	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/suspend", struct {
 		All    bool     `json:"all"`
 		Charms []string `json:"charms"`
 	}{
@@ -150,7 +150,7 @@ func (s *clientIntegrationSuite) TestSuspendAll(c *gc.C) {
 
 	err := s.planClient.Suspend("testisv/default", true)
 	c.Assert(err, jc.ErrorIsNil)
-	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/suspend", struct {
+	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/suspend", struct {
 		All    bool     `json:"all"`
 		Charms []string `json:"charms"`
 	}{
@@ -182,7 +182,7 @@ func (s *clientIntegrationSuite) TestResume(c *gc.C) {
 
 	err := s.planClient.Resume("testisv/default", false, "testisv/plan1", "testisv/plan2")
 	c.Assert(err, jc.ErrorIsNil)
-	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/resume", struct {
+	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/resume", struct {
 		All    bool     `json:"all"`
 		Charms []string `json:"charms"`
 	}{
@@ -196,7 +196,7 @@ func (s *clientIntegrationSuite) TestResumeAll(c *gc.C) {
 
 	err := s.planClient.Resume("testisv/default", true)
 	c.Assert(err, jc.ErrorIsNil)
-	s.httpClient.assertRequest(c, "POST", "/p/testisv/default/resume", struct {
+	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/resume", struct {
 		All    bool     `json:"all"`
 		Charms []string `json:"charms"`
 	}{
@@ -235,7 +235,7 @@ func (s *clientIntegrationSuite) TestAddCharm(c *gc.C) {
 
 	err := s.planClient.AddCharm("testisv/default", "cs:~testers/charm1-0", true)
 	c.Assert(err, jc.ErrorIsNil)
-	s.httpClient.assertRequest(c, "POST", "/charm", struct {
+	s.httpClient.assertRequest(c, "POST", "/v3/charm", struct {
 		Plan    string `json:"plan-url"`
 		Charm   string `json:"charm-url"`
 		Default bool   `json:"default"`
@@ -278,7 +278,7 @@ func (s *clientIntegrationSuite) TestGet(c *gc.C) {
 	response, err := s.planClient.Get("testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(response, gc.DeepEquals, plans)
-	s.httpClient.assertRequest(c, "GET", "/p/testisv/default", nil)
+	s.httpClient.assertRequest(c, "GET", "/v3/p/testisv/default", nil)
 }
 
 func (s *clientIntegrationSuite) TestGetFail(c *gc.C) {
@@ -318,7 +318,7 @@ func (s *clientIntegrationSuite) TestGetPlans(c *gc.C) {
 	response, err := s.planClient.GetPlans("testisv")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(response, gc.DeepEquals, []wireformat.Plan{p1, p2, p3})
-	s.httpClient.assertRequest(c, "GET", "/p/testisv", nil)
+	s.httpClient.assertRequest(c, "GET", "/v3/p/testisv", nil)
 }
 
 func (s *clientIntegrationSuite) TestGetPlansFail(c *gc.C) {
@@ -346,7 +346,7 @@ func (s *clientIntegrationSuite) TestGetDefaultPlan(c *gc.C) {
 	reponse, err := s.planClient.GetDefaultPlan("cs:~testers/charm1-0")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(reponse, gc.DeepEquals, &plan)
-	s.httpClient.assertRequest(c, "GET", "/charm/default?charm-url="+url.QueryEscape("cs:~testers/charm1-0"), nil)
+	s.httpClient.assertRequest(c, "GET", "/v3/charm/default?charm-url="+url.QueryEscape("cs:~testers/charm1-0"), nil)
 }
 
 func (s *clientIntegrationSuite) TestGetDefaultPlanFail(c *gc.C) {
@@ -374,7 +374,7 @@ func (s *clientIntegrationSuite) TestGetPlansForCharm(c *gc.C) {
 	reponse, err := s.planClient.GetPlansForCharm("cs:~testers/charm1-0")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(reponse, gc.DeepEquals, plans)
-	s.httpClient.assertRequest(c, "GET", "/charm?charm-url="+url.QueryEscape("cs:~testers/charm1-0"), nil)
+	s.httpClient.assertRequest(c, "GET", "/v3/charm?charm-url="+url.QueryEscape("cs:~testers/charm1-0"), nil)
 }
 
 func (s *clientIntegrationSuite) TestPlansForCharmFail(c *gc.C) {
@@ -425,7 +425,7 @@ func (s *clientIntegrationSuite) TestGetPlanDetails(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(details, gc.DeepEquals, &p)
 
-	s.httpClient.assertRequest(c, "GET", "/p/testisv/default/details", nil)
+	s.httpClient.assertRequest(c, "GET", "/v3/p/testisv/default/details", nil)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanDetailsRevision(c *gc.C) {
@@ -462,7 +462,7 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsRevision(c *gc.C) {
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(details, gc.DeepEquals, &p)
 
-	s.httpClient.assertRequest(c, "GET", "/p/testisv/default/details?revision=7", nil)
+	s.httpClient.assertRequest(c, "GET", "/v3/p/testisv/default/details?revision=7", nil)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanDetailsFail(c *gc.C) {
@@ -530,7 +530,7 @@ func (s *clientIntegrationSuite) TestGetPlanRevisions(c *gc.C) {
 	response, err := s.planClient.GetPlanRevisions("testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(response, gc.DeepEquals, plans)
-	s.httpClient.assertRequest(c, "GET", "/p/testisv/default/revisions", nil)
+	s.httpClient.assertRequest(c, "GET", "/v3/p/testisv/default/revisions", nil)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanRevisionsFail(c *gc.C) {
@@ -565,7 +565,7 @@ func (s *clientIntegrationSuite) TestAuthorize(c *gc.C) {
 	macaroon, err := client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(macaroon, jc.DeepEquals, m)
-	s.httpClient.assertRequest(c, "POST", "/plan/authorize", wireformat.AuthorizationRequest{
+	s.httpClient.assertRequest(c, "POST", "/v3/plan/authorize", wireformat.AuthorizationRequest{
 		EnvironmentUUID: "envUUID",
 		CharmURL:        "cs:~testers/charm1-0",
 		ServiceName:     "test-service",
@@ -600,7 +600,7 @@ func (s *clientIntegrationSuite) TestResellerAuthorize(c *gc.C) {
 	macaroon, err := client.AuthorizeReseller("canonical/jimm", "cs:~sabdf/jimm-0", "jimm", "sabdfl", "test-user")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(macaroon, jc.DeepEquals, m)
-	s.httpClient.assertRequest(c, "POST", "/plan/reseller/authorize", wireformat.ResellerAuthorizationRequest{
+	s.httpClient.assertRequest(c, "POST", "/v3/plan/reseller/authorize", wireformat.ResellerAuthorizationRequest{
 		Plan:             "canonical/jimm",
 		CharmURL:         "cs:~sabdf/jimm-0",
 		Application:      "jimm",
@@ -636,7 +636,7 @@ func (s *clientIntegrationSuite) TestGetResellerAuthorization(c *gc.C) {
 	auths, err := client.GetResellerAuthorizations(wireformat.ResellerAuthorizationQuery{Reseller: "isv"})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(auths, gc.HasLen, 1)
-	s.httpClient.assertRequest(c, "GET", "/plan/resellers/authorization?reseller=isv", nil)
+	s.httpClient.assertRequest(c, "GET", "/v3/plan/resellers/authorization?reseller=isv", nil)
 }
 
 func (s *clientIntegrationSuite) TestGetResellerAuthorizationEmptyQuery(c *gc.C) {
