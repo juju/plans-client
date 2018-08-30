@@ -110,7 +110,7 @@ func (c *client) Release(planID string) (*wireformat.Plan, error) {
 	if pID.Revision == 0 {
 		return nil, errors.New("must specify the plan revision")
 	}
-	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/%d/release", c.plansService, pID.Owner, pID.Name, pID.Revision))
+	u, err := url.Parse(fmt.Sprintf("%s/v3/p/%s/%s/%d/release", c.plansService, pID.Owner, pID.Name, pID.Revision))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -169,7 +169,7 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 	if err != nil {
 		return errors.Trace(err)
 	}
-	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/%s", c.plansService, pURL.Owner, pURL.Name, operation))
+	u, err := url.Parse(fmt.Sprintf("%s/v3/p/%s/%s/%s", c.plansService, pURL.Owner, pURL.Name, operation))
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -205,7 +205,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 		return nil, errors.Trace(err)
 	}
 
-	u, err := url.Parse(c.plansService + "/p")
+	u, err := url.Parse(c.plansService + "/v3/p")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -255,7 +255,7 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 		return errors.Trace(err)
 	}
 
-	u, err := url.Parse(c.plansService + "/charm")
+	u, err := url.Parse(c.plansService + "/v3/charm")
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -305,7 +305,7 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 		return nil, errors.Trace(err)
 	}
 
-	u, err := url.Parse(c.plansService + "/p/" + planURL)
+	u, err := url.Parse(c.plansService + "/v3/p/" + planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -336,7 +336,7 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 
 // GetPlans returns a plans owned by the user or group.
 func (c *client) GetPlans(owner string) ([]wireformat.Plan, error) {
-	u, err := url.Parse(c.plansService + "/p/" + owner)
+	u, err := url.Parse(c.plansService + "/v3/p/" + owner)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -378,7 +378,7 @@ func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
 		return nil, errors.New("plan revision specified where none was expected")
 	}
 
-	u, err := url.Parse(fmt.Sprintf("%s/p/%s/%s/revisions", c.plansService, planID.Owner, planID.Name))
+	u, err := url.Parse(fmt.Sprintf("%s/v3/p/%s/%s/revisions", c.plansService, planID.Owner, planID.Name))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -412,7 +412,7 @@ func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
 
 // GetDefaultPlan returns the default plan for the specified charm.
 func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
-	u, err := url.Parse(c.plansService + "/charm/default")
+	u, err := url.Parse(c.plansService + "/v3/charm/default")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -446,7 +446,7 @@ func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
 
 // GetPlansForCharm returns the default plan for the specified charm.
 func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
-	u, err := url.Parse(c.plansService + "/charm")
+	u, err := url.Parse(c.plansService + "/v3/charm")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -489,7 +489,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 		query.Add("revision", fmt.Sprintf("%d", purl.Revision))
 	}
 
-	u, err := url.Parse(c.plansService + "/p/" + purl.PlanURL.String() + "/details")
+	u, err := url.Parse(c.plansService + "/v3/p/" + purl.PlanURL.String() + "/details")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -525,7 +525,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 
 // Authorize implements the AuthorizationClient.Authorize method.
 func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL string) (*macaroon.Macaroon, error) {
-	u, err := url.Parse(c.plansService + "/plan/authorize")
+	u, err := url.Parse(c.plansService + "/v3/plan/authorize")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -573,7 +573,7 @@ func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL strin
 
 // GetAuthorizations implements the PlanAuthorizationClient.GetAuthorizations interface.
 func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error) {
-	u, err := url.Parse(c.plansService + "/plan/authorization")
+	u, err := url.Parse(c.plansService + "/v3/plan/authorization")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -618,7 +618,7 @@ func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wiref
 
 // AuthorizeReseller returns the reseller authorization macaroon for the specified application.
 func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error) {
-	u, err := url.Parse(c.plansService + "/plan/reseller/authorize")
+	u, err := url.Parse(c.plansService + "/v3/plan/reseller/authorize")
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -667,7 +667,7 @@ func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, a
 
 // GetResellerAuthorizations implements the PlanAuthorizationClient.GetResellerAuthorizations interface.
 func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/plan/resellers/authorization", c.plansService))
+	u, err := url.Parse(fmt.Sprintf("%s/v3/plan/resellers/authorization", c.plansService))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
