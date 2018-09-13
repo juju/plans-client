@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -99,7 +100,7 @@ func (c *ShowCommand) Run(ctx *cmd.Context) error {
 		return errors.Annotate(err, "failed to create a plan API client")
 	}
 
-	plan, err := apiClient.GetPlanDetails(c.PlanURL)
+	plan, err := apiClient.GetPlanDetails(context.Background(), c.PlanURL)
 	if err != nil {
 		return errors.Annotatef(err, "failed to retrieve plan %v details", c.PlanURL)
 	}

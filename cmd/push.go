@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -98,7 +99,7 @@ func (c *PushCommand) Run(ctx *cmd.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to create a plan API client")
 	}
-	plan, err := apiClient.Save(c.PlanURL, string(data))
+	plan, err := apiClient.Save(context.Background(), c.PlanURL, string(data))
 	if err != nil {
 		return errors.Annotate(err, "failed to save the plan")
 	}

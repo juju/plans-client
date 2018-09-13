@@ -5,6 +5,7 @@ package api_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -60,7 +61,7 @@ func (s *clientIntegrationSuite) TestSave(c *gc.C) {
 		URL: "testisv/default",
 	}
 
-	plan, err := s.planClient.Save("testisv/default", testPlan)
+	plan, err := s.planClient.Save(context.Background(), "testisv/default", testPlan)
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(plan.Id, gc.Equals, "testisv/default/1")
 
@@ -80,14 +81,14 @@ func (s *clientIntegrationSuite) TestSaveFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.Save("testisv/default", testPlan)
-	c.Assert(err, gc.ErrorMatches, `failed to save plan: silly error`)
+	_, err := s.planClient.Save(context.Background(), "testisv/default", testPlan)
+	c.Assert(err, gc.ErrorMatches, `failed to save plan.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestSaveUnauthorized(c *gc.C) {
 	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
 
-	_, err := s.planClient.Save("testisv/default", testPlan)
+	_, err := s.planClient.Save(context.Background(), "testisv/default", testPlan)
 	c.Assert(err, gc.ErrorMatches, `unauthorized to save the plan: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
@@ -99,14 +100,14 @@ func (s *clientIntegrationSuite) TestRelease(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 	s.httpClient.body = p
 
-	plan, err := s.planClient.Release("testisv/default/1")
+	plan, err := s.planClient.Release(context.Background(), "testisv/default/1")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(plan, gc.DeepEquals, &p)
 	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/1/release", nil)
 }
 
 func (s *clientIntegrationSuite) TestReleaseInvalidPlanURL(c *gc.C) {
-	_, err := s.planClient.Release("invalid/format/testisv/0/default")
+	_, err := s.planClient.Release(context.Background(), "invalid/format/testisv/0/default")
 	c.Assert(err, gc.ErrorMatches, `plan id "invalid/format/testisv/0/default" not valid`)
 }
 
@@ -120,21 +121,21 @@ func (s *clientIntegrationSuite) TestReleaseFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.Release("testisv/default/1")
-	c.Assert(err, gc.ErrorMatches, `failed to release plan: silly error`)
+	_, err := s.planClient.Release(context.Background(), "testisv/default/1")
+	c.Assert(err, gc.ErrorMatches, `failed to release plan.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestReleaseUnauthorized(c *gc.C) {
 	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
 
-	_, err := s.planClient.Release("testisv/default/1")
+	_, err := s.planClient.Release(context.Background(), "testisv/default/1")
 	c.Assert(err, gc.ErrorMatches, `release-plan is currently disabled for public use. Please ask in #juju-partners on freenode or email juju@lists.ubuntu.com: refused discharge: unauthorized`)
 }
 
 func (s *clientIntegrationSuite) TestSuspend(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 
-	err := s.planClient.Suspend("testisv/default", false, "testisv/plan1", "testisv/plan2")
+	err := s.planClient.Suspend(context.Background(), "testisv/default", false, "testisv/plan1", "testisv/plan2")
 	c.Assert(err, jc.ErrorIsNil)
 	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/suspend", struct {
 		All    bool     `json:"all"`
@@ -148,7 +149,7 @@ func (s *clientIntegrationSuite) TestSuspend(c *gc.C) {
 func (s *clientIntegrationSuite) TestSuspendAll(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 
-	err := s.planClient.Suspend("testisv/default", true)
+	err := s.planClient.Suspend(context.Background(), "testisv/default", true)
 	c.Assert(err, jc.ErrorIsNil)
 	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/suspend", struct {
 		All    bool     `json:"all"`
@@ -159,7 +160,7 @@ func (s *clientIntegrationSuite) TestSuspendAll(c *gc.C) {
 }
 
 func (s *clientIntegrationSuite) TestSuspendInvalidPlanURL(c *gc.C) {
-	err := s.planClient.Suspend("invalid/format/testisv/default", false, "cs:~testers/charm1-0")
+	err := s.planClient.Suspend(context.Background(), "invalid/format/testisv/default", false, "cs:~testers/charm1-0")
 	c.Assert(err, gc.ErrorMatches, `plan url "invalid/format/testisv/default" not valid`)
 }
 
@@ -173,14 +174,16 @@ func (s *clientIntegrationSuite) TestSuspendFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	err := s.planClient.Suspend("testisv/default", false, "cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, `failed to suspend plan: silly error`)
+	ctx := context.WithValue(context.Background(), "X-Request-ID", "test-id")
+
+	err := s.planClient.Suspend(ctx, "testisv/default", false, "cs:~testers/charm1-0")
+	c.Assert(err, gc.ErrorMatches, `failed to suspend plan \[ID:test-id\]: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestResume(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 
-	err := s.planClient.Resume("testisv/default", false, "testisv/plan1", "testisv/plan2")
+	err := s.planClient.Resume(context.Background(), "testisv/default", false, "testisv/plan1", "testisv/plan2")
 	c.Assert(err, jc.ErrorIsNil)
 	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/resume", struct {
 		All    bool     `json:"all"`
@@ -194,7 +197,7 @@ func (s *clientIntegrationSuite) TestResume(c *gc.C) {
 func (s *clientIntegrationSuite) TestResumeAll(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 
-	err := s.planClient.Resume("testisv/default", true)
+	err := s.planClient.Resume(context.Background(), "testisv/default", true)
 	c.Assert(err, jc.ErrorIsNil)
 	s.httpClient.assertRequest(c, "POST", "/v3/p/testisv/default/resume", struct {
 		All    bool     `json:"all"`
@@ -205,7 +208,7 @@ func (s *clientIntegrationSuite) TestResumeAll(c *gc.C) {
 }
 
 func (s *clientIntegrationSuite) TestResumeInvalidPlanURL(c *gc.C) {
-	err := s.planClient.Resume("invalid/format/testisv/default", false, "cs:~testers/charm1-0")
+	err := s.planClient.Resume(context.Background(), "invalid/format/testisv/default", false, "cs:~testers/charm1-0")
 	c.Assert(err, gc.ErrorMatches, `plan url "invalid/format/testisv/default" not valid`)
 }
 
@@ -219,21 +222,21 @@ func (s *clientIntegrationSuite) TestResumeFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	err := s.planClient.Resume("testisv/default", false, "cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, `failed to resume plan: silly error`)
+	err := s.planClient.Resume(context.Background(), "testisv/default", false, "cs:~testers/charm1-0")
+	c.Assert(err, gc.ErrorMatches, `failed to resume plan.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestResumeUnauthorized(c *gc.C) {
 	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
 
-	err := s.planClient.Resume("testisv/default", true)
+	err := s.planClient.Resume(context.Background(), "testisv/default", true)
 	c.Assert(err, gc.ErrorMatches, `unauthorized to resume plan: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
 func (s *clientIntegrationSuite) TestAddCharm(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 
-	err := s.planClient.AddCharm("testisv/default", "cs:~testers/charm1-0", true)
+	err := s.planClient.AddCharm(context.Background(), "testisv/default", "cs:~testers/charm1-0", true)
 	c.Assert(err, jc.ErrorIsNil)
 	s.httpClient.assertRequest(c, "POST", "/v3/charm", struct {
 		Plan    string `json:"plan-url"`
@@ -249,7 +252,7 @@ func (s *clientIntegrationSuite) TestAddCharm(c *gc.C) {
 func (s *clientIntegrationSuite) TestAddCharmUnauthorized(c *gc.C) {
 	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
 
-	err := s.planClient.AddCharm("testisv/default", "cs:~testers/charm1-0", true)
+	err := s.planClient.AddCharm(context.Background(), "testisv/default", "cs:~testers/charm1-0", true)
 	c.Assert(err, gc.ErrorMatches, `unauthorized to add charm: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
@@ -263,8 +266,8 @@ func (s *clientIntegrationSuite) TestAddCharmFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	err := s.planClient.AddCharm("testisv/default", "cs:~testers/charm1-0", false)
-	c.Assert(err, gc.ErrorMatches, `failed to add charm: silly error`)
+	err := s.planClient.AddCharm(context.Background(), "testisv/default", "cs:~testers/charm1-0", false)
+	c.Assert(err, gc.ErrorMatches, `failed to add charm.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGet(c *gc.C) {
@@ -275,7 +278,7 @@ func (s *clientIntegrationSuite) TestGet(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 	s.httpClient.body = plans
 
-	response, err := s.planClient.Get("testisv/default")
+	response, err := s.planClient.Get(context.Background(), "testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(response, gc.DeepEquals, plans)
 	s.httpClient.assertRequest(c, "GET", "/v3/p/testisv/default", nil)
@@ -291,8 +294,8 @@ func (s *clientIntegrationSuite) TestGetFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.Get("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error`)
+	_, err := s.planClient.Get(context.Background(), "testisv/default")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlans(c *gc.C) {
@@ -315,7 +318,7 @@ func (s *clientIntegrationSuite) TestGetPlans(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 	s.httpClient.body = plans
 
-	response, err := s.planClient.GetPlans("testisv")
+	response, err := s.planClient.GetPlans(context.Background(), "testisv")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(response, gc.DeepEquals, []wireformat.Plan{p1, p2, p3})
 	s.httpClient.assertRequest(c, "GET", "/v3/p/testisv", nil)
@@ -331,8 +334,8 @@ func (s *clientIntegrationSuite) TestGetPlansFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.GetPlans("testisv")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans: silly error`)
+	_, err := s.planClient.GetPlans(context.Background(), "testisv")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plans.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGetDefaultPlan(c *gc.C) {
@@ -343,7 +346,7 @@ func (s *clientIntegrationSuite) TestGetDefaultPlan(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 	s.httpClient.body = plan
 
-	reponse, err := s.planClient.GetDefaultPlan("cs:~testers/charm1-0")
+	reponse, err := s.planClient.GetDefaultPlan(context.Background(), "cs:~testers/charm1-0")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(reponse, gc.DeepEquals, &plan)
 	s.httpClient.assertRequest(c, "GET", "/v3/charm/default?charm-url="+url.QueryEscape("cs:~testers/charm1-0"), nil)
@@ -359,8 +362,8 @@ func (s *clientIntegrationSuite) TestGetDefaultPlanFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.GetDefaultPlan("cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve default plan: silly error`)
+	_, err := s.planClient.GetDefaultPlan(context.Background(), "cs:~testers/charm1-0")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve default plan.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlansForCharm(c *gc.C) {
@@ -371,7 +374,7 @@ func (s *clientIntegrationSuite) TestGetPlansForCharm(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 	s.httpClient.body = plans
 
-	reponse, err := s.planClient.GetPlansForCharm("cs:~testers/charm1-0")
+	reponse, err := s.planClient.GetPlansForCharm(context.Background(), "cs:~testers/charm1-0")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(reponse, gc.DeepEquals, plans)
 	s.httpClient.assertRequest(c, "GET", "/v3/charm?charm-url="+url.QueryEscape("cs:~testers/charm1-0"), nil)
@@ -387,8 +390,8 @@ func (s *clientIntegrationSuite) TestPlansForCharmFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.GetPlansForCharm("cs:~testers/charm1-0")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve associated plans: silly error`)
+	_, err := s.planClient.GetPlansForCharm(context.Background(), "cs:~testers/charm1-0")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve associated plans.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanDetails(c *gc.C) {
@@ -421,7 +424,7 @@ func (s *clientIntegrationSuite) TestGetPlanDetails(c *gc.C) {
 	}
 	s.httpClient.body = p
 
-	details, err := s.planClient.GetPlanDetails("testisv/default")
+	details, err := s.planClient.GetPlanDetails(context.Background(), "testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(details, gc.DeepEquals, &p)
 
@@ -458,7 +461,7 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsRevision(c *gc.C) {
 	}
 	s.httpClient.body = p
 
-	details, err := s.planClient.GetPlanDetails("testisv/default/7")
+	details, err := s.planClient.GetPlanDetails(context.Background(), "testisv/default/7")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(details, gc.DeepEquals, &p)
 
@@ -475,14 +478,14 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.GetPlanDetails("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details: silly error`)
+	_, err := s.planClient.GetPlanDetails(context.Background(), "testisv/default")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanDetailsUnauthorized(c *gc.C) {
 	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
 
-	_, err := s.planClient.GetPlanDetails("testisv/default")
+	_, err := s.planClient.GetPlanDetails(context.Background(), "testisv/default")
 	c.Assert(err, gc.ErrorMatches, `unauthorized to retrieve plan details: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
@@ -496,21 +499,21 @@ func (s *clientIntegrationSuite) TestGetPlanDetailsNotFound(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.GetPlanDetails("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details: silly error`)
+	_, err := s.planClient.GetPlanDetails(context.Background(), "testisv/default")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan details.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestSuspendResumeFailsWithPlanRevision(c *gc.C) {
-	err := s.planClient.Suspend("testisv/default/1", false, "cs:~testers/charm1-0")
+	err := s.planClient.Suspend(context.Background(), "testisv/default/1", false, "cs:~testers/charm1-0")
 	c.Assert(err, gc.ErrorMatches, `plan url "testisv/default/1" not valid`)
-	err = s.planClient.Suspend("testisv/default/1", false, "cs:~testers/charm1-0")
+	err = s.planClient.Suspend(context.Background(), "testisv/default/1", false, "cs:~testers/charm1-0")
 	c.Assert(err, gc.ErrorMatches, `plan url "testisv/default/1" not valid`)
 }
 
 func (s *clientIntegrationSuite) TestSuspendUnauthorized(c *gc.C) {
 	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
 
-	err := s.planClient.Suspend("testisv/default", true)
+	err := s.planClient.Suspend(context.Background(), "testisv/default", true)
 	c.Assert(err, gc.ErrorMatches, `unauthorized to suspend plan: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
@@ -527,7 +530,7 @@ func (s *clientIntegrationSuite) TestGetPlanRevisions(c *gc.C) {
 	s.httpClient.status = http.StatusOK
 	s.httpClient.body = plans
 
-	response, err := s.planClient.GetPlanRevisions("testisv/default")
+	response, err := s.planClient.GetPlanRevisions(context.Background(), "testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(response, gc.DeepEquals, plans)
 	s.httpClient.assertRequest(c, "GET", "/v3/p/testisv/default/revisions", nil)
@@ -543,14 +546,14 @@ func (s *clientIntegrationSuite) TestGetPlanRevisionsFail(c *gc.C) {
 		Message: "silly error",
 	}
 
-	_, err := s.planClient.GetPlanRevisions("testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan revisions: silly error`)
+	_, err := s.planClient.GetPlanRevisions(context.Background(), "testisv/default")
+	c.Assert(err, gc.ErrorMatches, `failed to retrieve plan revisions.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGetPlanRevisionsUnauthorized(c *gc.C) {
 	s.httpClient.SetErrors(errors.New("refused discharge: unauthorized"))
 
-	_, err := s.planClient.GetPlanRevisions("testisv/default")
+	_, err := s.planClient.GetPlanRevisions(context.Background(), "testisv/default")
 	c.Assert(err, gc.ErrorMatches, `unauthorized to retrieve plan revisions: please run "charm whoami" to verify you are member of the "testisv" group`)
 }
 
@@ -562,7 +565,7 @@ func (s *clientIntegrationSuite) TestAuthorize(c *gc.C) {
 
 	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
 	c.Assert(err, jc.ErrorIsNil)
-	macaroon, err := client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default")
+	macaroon, err := client.Authorize(context.Background(), "envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(macaroon, jc.DeepEquals, m)
 	s.httpClient.assertRequest(c, "POST", "/v3/plan/authorize", wireformat.AuthorizationRequest{
@@ -585,8 +588,8 @@ func (s *clientIntegrationSuite) TestAuthorizeFail(c *gc.C) {
 
 	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
 	c.Assert(err, jc.ErrorIsNil)
-	_, err = client.Authorize("envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default")
-	c.Assert(err, gc.ErrorMatches, `failed to authorize plan: silly error`)
+	_, err = client.Authorize(context.Background(), "envUUID", "cs:~testers/charm1-0", "test-service", "testisv/default")
+	c.Assert(err, gc.ErrorMatches, `failed to authorize plan.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestResellerAuthorize(c *gc.C) {
@@ -597,7 +600,7 @@ func (s *clientIntegrationSuite) TestResellerAuthorize(c *gc.C) {
 
 	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
 	c.Assert(err, jc.ErrorIsNil)
-	macaroon, err := client.AuthorizeReseller("canonical/jimm", "cs:~sabdf/jimm-0", "jimm", "sabdfl", "test-user")
+	macaroon, err := client.AuthorizeReseller(context.Background(), "canonical/jimm", "cs:~sabdf/jimm-0", "jimm", "sabdfl", "test-user")
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(macaroon, jc.DeepEquals, m)
 	s.httpClient.assertRequest(c, "POST", "/v3/plan/reseller/authorize", wireformat.ResellerAuthorizationRequest{
@@ -621,8 +624,8 @@ func (s *clientIntegrationSuite) TestResellerAuthorizeFail(c *gc.C) {
 
 	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
 	c.Assert(err, jc.ErrorIsNil)
-	_, err = client.AuthorizeReseller("canonical/jimm", "cs:~sabdf/jimm-0", "jimm", "sabdfl", "test-user")
-	c.Assert(err, gc.ErrorMatches, `failed to authorize reseller plan: silly error`)
+	_, err = client.AuthorizeReseller(context.Background(), "canonical/jimm", "cs:~sabdf/jimm-0", "jimm", "sabdfl", "test-user")
+	c.Assert(err, gc.ErrorMatches, `failed to authorize reseller plan.*: silly error`)
 }
 
 func (s *clientIntegrationSuite) TestGetResellerAuthorization(c *gc.C) {
@@ -633,7 +636,7 @@ func (s *clientIntegrationSuite) TestGetResellerAuthorization(c *gc.C) {
 
 	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
 	c.Assert(err, jc.ErrorIsNil)
-	auths, err := client.GetResellerAuthorizations(wireformat.ResellerAuthorizationQuery{Reseller: "isv"})
+	auths, err := client.GetResellerAuthorizations(context.Background(), wireformat.ResellerAuthorizationQuery{Reseller: "isv"})
 	c.Assert(err, jc.ErrorIsNil)
 	c.Assert(auths, gc.HasLen, 1)
 	s.httpClient.assertRequest(c, "GET", "/v3/plan/resellers/authorization?reseller=isv", nil)
@@ -647,10 +650,29 @@ func (s *clientIntegrationSuite) TestGetResellerAuthorizationEmptyQuery(c *gc.C)
 
 	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
 	c.Assert(err, jc.ErrorIsNil)
-	auths, err := client.GetResellerAuthorizations(wireformat.ResellerAuthorizationQuery{})
+	auths, err := client.GetResellerAuthorizations(context.Background(), wireformat.ResellerAuthorizationQuery{})
 	c.Assert(err, gc.ErrorMatches, `empty reseller authorization query`)
 	c.Assert(auths, gc.HasLen, 0)
 	s.httpClient.assertNoRequest(c)
+}
+
+func (s *clientIntegrationSuite) TestContext(c *gc.C) {
+	s.httpClient.status = http.StatusOK
+	s.httpClient.body = []wireformat.ResellerAuthorization{{
+		AuthUUID: "blah-di-blah",
+	}}
+
+	ctx := context.WithValue(context.Background(), "X-Request-ID", "test-id")
+
+	client, err := api.NewPlanClient("", api.HTTPClient(s.httpClient))
+	c.Assert(err, jc.ErrorIsNil)
+	_, err = client.GetResellerAuthorizations(ctx, wireformat.ResellerAuthorizationQuery{Reseller: "isv"})
+	c.Assert(err, jc.ErrorIsNil)
+
+	s.httpClient.CheckCalls(c, []testing.StubCall{{
+		FuncName: "Do",
+		Args:     []interface{}{"test-id"},
+	}})
 }
 
 type mockHttpClient struct {
@@ -662,12 +684,20 @@ type mockHttpClient struct {
 	requestBody   []byte
 }
 
+func getID(req *http.Request) string {
+	return req.Header.Get("X-Request-ID")
+}
+
 func (m *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
+	m.MethodCall(m, "Do", req.Header.Get("X-Request-ID"))
 	var err error
 	m.requestURL = req.URL.String()
 	m.requestMethod = req.Method
 	if req.Body != nil {
 		m.requestBody, err = ioutil.ReadAll(req.Body)
+		if err != nil {
+			return nil, errors.Trace(err)
+		}
 	}
 	data := []byte{}
 	if m.body != nil {
@@ -676,6 +706,8 @@ func (m *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
 			return nil, errors.Trace(err)
 		}
 	}
+	header := make(http.Header)
+	header.Add("X-Request-ID", getID(req))
 	return &http.Response{
 		Status:     http.StatusText(m.status),
 		StatusCode: m.status,
@@ -683,10 +715,12 @@ func (m *mockHttpClient) Do(req *http.Request) (*http.Response, error) {
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Body:       ioutil.NopCloser(bytes.NewReader(data)),
+		Header:     header,
 	}, m.NextErr()
 }
 
 func (m *mockHttpClient) DoWithBody(req *http.Request, body io.ReadSeeker) (*http.Response, error) {
+	m.MethodCall(m, "DoWithBody", req.Context().Value("X-Request-ID"))
 	var err error
 	m.requestURL = req.URL.String()
 	m.requestMethod = req.Method
@@ -701,6 +735,8 @@ func (m *mockHttpClient) DoWithBody(req *http.Request, body io.ReadSeeker) (*htt
 			return nil, errors.Trace(err)
 		}
 	}
+	header := make(http.Header)
+	header.Add("X-Request-ID", getID(req))
 	return &http.Response{
 		Status:     http.StatusText(m.status),
 		StatusCode: m.status,
@@ -708,6 +744,7 @@ func (m *mockHttpClient) DoWithBody(req *http.Request, body io.ReadSeeker) (*htt
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Body:       ioutil.NopCloser(bytes.NewReader(data)),
+		Header:     header,
 	}, m.NextErr()
 }
 

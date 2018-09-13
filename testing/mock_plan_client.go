@@ -4,6 +4,7 @@
 package testing
 
 import (
+	"context"
 	"time"
 
 	"github.com/juju/errors"
@@ -46,13 +47,13 @@ func NewMockPlanClient() *MockPlanClient {
 }
 
 // GetPlans returns plans owned by the specified owner.
-func (m *MockPlanClient) GetPlans(owner string) ([]wireformat.Plan, error) {
+func (m *MockPlanClient) GetPlans(_ context.Context, owner string) ([]wireformat.Plan, error) {
 	m.MethodCall(m, "GetPlans", owner)
 	return m.Plans, m.NextErr()
 }
 
 // Release releases the specified plan.
-func (m *MockPlanClient) Release(planURL string) (*wireformat.Plan, error) {
+func (m *MockPlanClient) Release(_ context.Context, planURL string) (*wireformat.Plan, error) {
 	m.MethodCall(m, "Release", planURL)
 	et := time.Date(2016, 1, 1, 1, 0, 0, 0, time.UTC)
 	p := &wireformat.Plan{
@@ -67,19 +68,19 @@ func (m *MockPlanClient) Release(planURL string) (*wireformat.Plan, error) {
 }
 
 // Resume resumes the plan for specified charms.
-func (m *MockPlanClient) Resume(planURL string, all bool, charmURLs ...string) error {
+func (m *MockPlanClient) Resume(_ context.Context, planURL string, all bool, charmURLs ...string) error {
 	m.MethodCall(m, "Resume", planURL, all, charmURLs)
 	return m.NextErr()
 }
 
 // Suspend suspends the plan for specified charms.
-func (m *MockPlanClient) Suspend(planURL string, all bool, charmURLs ...string) error {
+func (m *MockPlanClient) Suspend(_ context.Context, planURL string, all bool, charmURLs ...string) error {
 	m.MethodCall(m, "Suspend", planURL, all, charmURLs)
 	return m.NextErr()
 }
 
 // Save stores the plan in the mock.
-func (m *MockPlanClient) Save(planURL, definition string) (*wireformat.Plan, error) {
+func (m *MockPlanClient) Save(_ context.Context, planURL, definition string) (*wireformat.Plan, error) {
 	m.MethodCall(m, "Save", planURL, definition)
 	return &wireformat.Plan{
 		Id:         "testisv/default/17",
@@ -90,12 +91,12 @@ func (m *MockPlanClient) Save(planURL, definition string) (*wireformat.Plan, err
 }
 
 // AddCharm adds a charm to an existing plan
-func (m *MockPlanClient) AddCharm(plan, charmURL string, isDefault bool) error {
+func (m *MockPlanClient) AddCharm(_ context.Context, plan, charmURL string, isDefault bool) error {
 	m.MethodCall(m, "AddCharm", plan, charmURL, isDefault)
 	return m.NextErr()
 }
 
-func (m *MockPlanClient) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
+func (m *MockPlanClient) GetDefaultPlan(_ context.Context, charmURL string) (*wireformat.Plan, error) {
 	m.MethodCall(m, "GetDefaultPlan", charmURL)
 	p := &wireformat.Plan{
 		URL:        "testisv/default",
@@ -105,7 +106,7 @@ func (m *MockPlanClient) GetDefaultPlan(charmURL string) (*wireformat.Plan, erro
 	return p, m.NextErr()
 }
 
-func (m *MockPlanClient) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
+func (m *MockPlanClient) GetPlansForCharm(_ context.Context, charmURL string) ([]wireformat.Plan, error) {
 	m.MethodCall(m, "GetPlansForCharm", charmURL)
 	p := []wireformat.Plan{{
 		URL:        "testisv/default",
@@ -116,7 +117,7 @@ func (m *MockPlanClient) GetPlansForCharm(charmURL string) ([]wireformat.Plan, e
 }
 
 // Get returns all plans stored in the mock, regardless of the query.
-func (m *MockPlanClient) Get(planURL string) ([]wireformat.Plan, error) {
+func (m *MockPlanClient) Get(_ context.Context, planURL string) ([]wireformat.Plan, error) {
 	m.MethodCall(m, "Get", planURL)
 	p := wireformat.Plan{
 		URL:        planURL,
@@ -128,7 +129,7 @@ func (m *MockPlanClient) Get(planURL string) ([]wireformat.Plan, error) {
 }
 
 // GetPlanRevisions returns all revisions of a plan.
-func (m *MockPlanClient) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
+func (m *MockPlanClient) GetPlanRevisions(_ context.Context, plan string) ([]wireformat.Plan, error) {
 	pID, err := wireformat.ParsePlanIDWithOptionalRevision(plan)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -141,7 +142,7 @@ func (m *MockPlanClient) GetPlanRevisions(plan string) ([]wireformat.Plan, error
 }
 
 // GetPlanDetails returns detailed information about a plan.
-func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error) {
+func (m *MockPlanClient) GetPlanDetails(_ context.Context, planURL string) (*wireformat.PlanDetails, error) {
 	m.MethodCall(m, "GetPlanDetails", planURL)
 	if m.PlanDetails != nil {
 		return m.PlanDetails, m.NextErr()
@@ -195,23 +196,23 @@ func (m *MockPlanClient) GetPlanDetails(planURL string) (*wireformat.PlanDetails
 }
 
 // Authorize returns the authorization macaroon for the specified environment, charm url and service name.
-func (m *MockPlanClient) Authorize(environmentUUID, charmURL, serviceName, plan string) (*macaroon.Macaroon, error) {
+func (m *MockPlanClient) Authorize(_ context.Context, environmentUUID, charmURL, serviceName, plan string) (*macaroon.Macaroon, error) {
 	panic("not implemented")
 }
 
 // AuthorizeReseller returns the reseller authorization macaroon for the specified application.
-func (m *MockPlanClient) AuthorizeReseller(plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error) {
+func (m *MockPlanClient) AuthorizeReseller(_ context.Context, plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error) {
 	panic("not implemented")
 }
 
 // GetAuthorizations returns a slice of Authorizations that match the
 // criteria specified in the query.
-func (m *MockPlanClient) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error) {
+func (m *MockPlanClient) GetAuthorizations(_ context.Context, query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error) {
 	panic("not implemented")
 }
 
 // GetResellerAuthorizations retuns a slice of reseller Authorizations.
-func (m *MockPlanClient) GetResellerAuthorizations(query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error) {
+func (m *MockPlanClient) GetResellerAuthorizations(_ context.Context, query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error) {
 	panic("not implemented")
 }
 

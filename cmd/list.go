@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
 	"github.com/juju/cmd"
@@ -85,7 +86,7 @@ func (c *ListPlansCommand) Run(ctx *cmd.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to create a plan API client")
 	}
-	plans, err := apiClient.GetPlans(c.Owner)
+	plans, err := apiClient.GetPlans(context.Background(), c.Owner)
 	if err != nil {
 		return errors.Annotate(err, "failed to retrieve plans")
 	}

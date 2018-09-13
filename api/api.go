@@ -6,6 +6,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -26,37 +27,52 @@ import (
 // PlanClient defines the interface available to clients of the plan api.
 type PlanClient interface {
 	// Save uploads a new plan to the plans service.
-	Save(planURL, definition string) (*wireformat.Plan, error)
+	Save(ctx context.Context, planURL, definition string) (*wireformat.Plan, error)
 	// AddCharm associates a charm with the specified plan.
-	AddCharm(planURL string, charmURL string, isDefault bool) error
+	AddCharm(ctx context.Context, planURL string, charmURL string, isDefault bool) error
 	// Get returns a slice of Plans that match the stated criteria, namely
 	// the plan URL, owner of the plan or an associated charm url.
-	Get(planURL string) ([]wireformat.Plan, error)
+	Get(ctx context.Context, planURL string) ([]wireformat.Plan, error)
 	// GetPlans returns a slice of plans owned by user or group.
-	GetPlans(owner string) ([]wireformat.Plan, error)
+	GetPlans(ctx context.Context, owner string) ([]wireformat.Plan, error)
 	// GetDefaultPlan returns the default plan associated with the charm.
-	GetDefaultPlan(charmURL string) (*wireformat.Plan, error)
+	GetDefaultPlan(ctx context.Context, charmURL string) (*wireformat.Plan, error)
 	// GetPlansForCharm returns the plans associated with the charm.
-	GetPlansForCharm(charmURL string) ([]wireformat.Plan, error)
+	GetPlansForCharm(ctx context.Context, charmURL string) ([]wireformat.Plan, error)
 	// Suspend suspends the plan for specified charms.
-	Suspend(planURL string, all bool, charmURLs ...string) error
+	Suspend(ctx context.Context, planURL string, all bool, charmURLs ...string) error
 	// Resume resumes the plan for specified charms.
-	Resume(planURL string, all bool, charmURLs ...string) error
+	Resume(ctx context.Context, planURL string, all bool, charmURLs ...string) error
 	// Release releases the specified plan.
-	Release(planID string) (*wireformat.Plan, error)
+	Release(ctx context.Context, planID string) (*wireformat.Plan, error)
 	// GetPlanDetails returns detailed information about a plan.
-	GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
+	GetPlanDetails(ctx context.Context, planURL string) (*wireformat.PlanDetails, error)
 	// GetPlanRevisions returns all revision of a plan.
-	GetPlanRevisions(planURL string) ([]wireformat.Plan, error)
+	GetPlanRevisions(ctx context.Context, planURL string) ([]wireformat.Plan, error)
 	// Authorize returns the authorization macaroon for the specified environment, charm url and service name.
-	Authorize(environmentUUID, charmURL, serviceName, plan string) (*macaroon.Macaroon, error)
+	Authorize(ctx context.Context, environmentUUID, charmURL, serviceName, plan string) (*macaroon.Macaroon, error)
 	// AuthorizeReseller returns the reseller authorization macaroon for the specified application.
-	AuthorizeReseller(plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error)
+	AuthorizeReseller(ctx context.Context, plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error)
 	// GetAuthorizations returns a slice of Authorizations that match the
 	// criteria specified in the query.
-	GetAuthorizations(query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error)
+	GetAuthorizations(ctx context.Context, query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error)
 	// GetResellerAuthorizations retuns a slice of reseller Authorizations.
-	GetResellerAuthorizations(query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error)
+	GetResellerAuthorizations(ctx context.Context, query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error)
+}
+
+// headerName is the name of the header the handler will look for in incoming requests.
+const headerName = "X-Request-ID"
+
+func requestWithId(ctx context.Context, req *http.Request) *http.Request {
+	id, ok := ctx.Value(headerName).(string)
+	if ok {
+		req.Header.Set(headerName, id)
+	}
+	return req
+}
+
+func idHeader(response *http.Response) string {
+	return response.Header.Get(headerName)
 }
 
 type httpClient interface {
@@ -102,7 +118,7 @@ func NewPlanClient(url string, options ...ClientOption) (*client, error) {
 }
 
 // Release releases the specified plan.
-func (c *client) Release(planID string) (*wireformat.Plan, error) {
+func (c *client) Release(ctx context.Context, planID string) (*wireformat.Plan, error) {
 	pID, err := wireformat.ParsePlanID(planID)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -118,6 +134,7 @@ func (c *client) Release(planID string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.Do(req)
 	if err != nil {
@@ -144,16 +161,16 @@ func (c *client) Release(planID string) (*wireformat.Plan, error) {
 }
 
 // Suspend suspends the plan for specified charms
-func (c *client) Suspend(planURL string, all bool, charmURLs ...string) error {
-	return c.suspendResume("suspend", planURL, all, charmURLs...)
+func (c *client) Suspend(ctx context.Context, planURL string, all bool, charmURLs ...string) error {
+	return c.suspendResume(ctx, "suspend", planURL, all, charmURLs...)
 }
 
 // Resume resumes the plan for specified charms
-func (c *client) Resume(planURL string, all bool, charmURLs ...string) error {
-	return c.suspendResume("resume", planURL, all, charmURLs...)
+func (c *client) Resume(ctx context.Context, planURL string, all bool, charmURLs ...string) error {
+	return c.suspendResume(ctx, "resume", planURL, all, charmURLs...)
 }
 
-func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ...string) error {
+func (c *client) suspendResume(ctx context.Context, operation, planURL string, all bool, charmURLs ...string) error {
 	pURL, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return errors.Trace(err)
@@ -178,6 +195,7 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 		return errors.Trace(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(data))
 	if err != nil {
@@ -185,7 +203,7 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 			return errors.Errorf(`unauthorized to %s plan: please run "charm whoami" to verify you are member of the %q group`, operation, pURL.Owner)
 		}
 
-		return errors.Annotate(err, "failed to resume the plan")
+		return errors.Annotatef(err, "failed to %v the plan", operation)
 	}
 	defer discardClose(response)
 
@@ -199,7 +217,7 @@ func (c *client) suspendResume(operation, planURL string, all bool, charmURLs ..
 
 // Save stores the rating plan definition (definition - plan definition yaml) under a
 // specified name (planURL).
-func (c *client) Save(planURL string, definition string) (*wireformat.Plan, error) {
+func (c *client) Save(ctx context.Context, planURL string, definition string) (*wireformat.Plan, error) {
 	pURL, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -222,6 +240,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 		return nil, errors.Annotate(err, "failed to create a POST request")
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(payload.Bytes()))
 	if err != nil {
@@ -249,7 +268,7 @@ func (c *client) Save(planURL string, definition string) (*wireformat.Plan, erro
 
 // AddCharm adds the specified charm to all plans matching the criteria.
 // If uuid is defined, both, the isvname and planname may be empty ("").
-func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error {
+func (c *client) AddCharm(ctx context.Context, planURL string, charmURL string, isDefault bool) error {
 	pURL, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return errors.Trace(err)
@@ -281,6 +300,7 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 		return errors.Annotate(err, "failed to create a POST request")
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(payload.Bytes()))
 	if err != nil {
@@ -299,7 +319,7 @@ func (c *client) AddCharm(planURL string, charmURL string, isDefault bool) error
 }
 
 // Get performs a query on the plans service and returns all matching plans.
-func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
+func (c *client) Get(ctx context.Context, planURL string) ([]wireformat.Plan, error) {
 	_, err := wireformat.ParsePlanURL(planURL)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -314,6 +334,7 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create a GET request")
 	}
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.Do(req)
 	if err != nil {
@@ -335,7 +356,7 @@ func (c *client) Get(planURL string) ([]wireformat.Plan, error) {
 }
 
 // GetPlans returns a plans owned by the user or group.
-func (c *client) GetPlans(owner string) ([]wireformat.Plan, error) {
+func (c *client) GetPlans(ctx context.Context, owner string) ([]wireformat.Plan, error) {
 	u, err := url.Parse(c.plansService + "/v3/p/" + owner)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -345,6 +366,7 @@ func (c *client) GetPlans(owner string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create a GET request")
 	}
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.Do(req)
 	if err != nil {
@@ -369,7 +391,7 @@ func (c *client) GetPlans(owner string) ([]wireformat.Plan, error) {
 }
 
 // GetPlanRevisions returns all revisions of a plan.
-func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
+func (c *client) GetPlanRevisions(ctx context.Context, plan string) ([]wireformat.Plan, error) {
 	planID, err := wireformat.ParsePlanIDWithOptionalRevision(plan)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -387,6 +409,7 @@ func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create a GET request")
 	}
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.Do(req)
 	if err != nil {
@@ -411,7 +434,7 @@ func (c *client) GetPlanRevisions(plan string) ([]wireformat.Plan, error) {
 }
 
 // GetDefaultPlan returns the default plan for the specified charm.
-func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
+func (c *client) GetDefaultPlan(ctx context.Context, charmURL string) (*wireformat.Plan, error) {
 	u, err := url.Parse(c.plansService + "/v3/charm/default")
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -424,6 +447,8 @@ func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create GET request")
 	}
+	req = requestWithId(ctx, req)
+
 	response, err := c.client.Do(req)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve default plan")
@@ -445,7 +470,7 @@ func (c *client) GetDefaultPlan(charmURL string) (*wireformat.Plan, error) {
 }
 
 // GetPlansForCharm returns the default plan for the specified charm.
-func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
+func (c *client) GetPlansForCharm(ctx context.Context, charmURL string) ([]wireformat.Plan, error) {
 	u, err := url.Parse(c.plansService + "/v3/charm")
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -458,6 +483,8 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create GET request")
 	}
+	req = requestWithId(ctx, req)
+
 	response, err := c.client.Do(req)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to retrieve default plan")
@@ -479,7 +506,7 @@ func (c *client) GetPlansForCharm(charmURL string) ([]wireformat.Plan, error) {
 }
 
 // GetPlanDetailes returns detailed information about a plan.
-func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error) {
+func (c *client) GetPlanDetails(ctx context.Context, planURL string) (*wireformat.PlanDetails, error) {
 	query := url.Values{}
 	purl, err := wireformat.ParsePlanIDWithOptionalRevision(planURL)
 	if err != nil {
@@ -499,6 +526,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create a GET request")
 	}
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.Do(req)
 	if err != nil {
@@ -524,7 +552,7 @@ func (c *client) GetPlanDetails(planURL string) (*wireformat.PlanDetails, error)
 }
 
 // Authorize implements the AuthorizationClient.Authorize method.
-func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL string) (*macaroon.Macaroon, error) {
+func (c *client) Authorize(ctx context.Context, environmentUUID, charmURL, serviceName, planURL string) (*macaroon.Macaroon, error) {
 	u, err := url.Parse(c.plansService + "/v3/plan/authorize")
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -549,6 +577,7 @@ func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL strin
 		return nil, errors.Trace(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(buff.Bytes()))
 	if err != nil {
@@ -572,7 +601,7 @@ func (c *client) Authorize(environmentUUID, charmURL, serviceName, planURL strin
 }
 
 // GetAuthorizations implements the PlanAuthorizationClient.GetAuthorizations interface.
-func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error) {
+func (c *client) GetAuthorizations(ctx context.Context, query wireformat.AuthorizationQuery) ([]wireformat.Authorization, error) {
 	u, err := url.Parse(c.plansService + "/v3/plan/authorization")
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -592,6 +621,7 @@ func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wiref
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create GET request")
 	}
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.Do(req)
 	if err != nil {
@@ -617,7 +647,7 @@ func (c *client) GetAuthorizations(query wireformat.AuthorizationQuery) ([]wiref
 }
 
 // AuthorizeReseller returns the reseller authorization macaroon for the specified application.
-func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error) {
+func (c *client) AuthorizeReseller(ctx context.Context, plan, charm, application, applicationOwner, applicationUser string) (*macaroon.Macaroon, error) {
 	u, err := url.Parse(c.plansService + "/v3/plan/reseller/authorize")
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -643,6 +673,7 @@ func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, a
 		return nil, errors.Trace(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.DoWithBody(req, bytes.NewReader(buff.Bytes()))
 	if err != nil {
@@ -666,7 +697,7 @@ func (c *client) AuthorizeReseller(plan, charm, application, applicationOwner, a
 }
 
 // GetResellerAuthorizations implements the PlanAuthorizationClient.GetResellerAuthorizations interface.
-func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error) {
+func (c *client) GetResellerAuthorizations(ctx context.Context, query wireformat.ResellerAuthorizationQuery) ([]wireformat.ResellerAuthorization, error) {
 	u, err := url.Parse(fmt.Sprintf("%s/v3/plan/resellers/authorization", c.plansService))
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -698,6 +729,7 @@ func (c *client) GetResellerAuthorizations(query wireformat.ResellerAuthorizatio
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create GET request")
 	}
+	req = requestWithId(ctx, req)
 
 	response, err := c.client.Do(req)
 	if err != nil {
@@ -729,9 +761,10 @@ func discardClose(response *http.Response) {
 
 func unmarshalError(action string, response *http.Response) error {
 	if response.StatusCode != http.StatusOK {
+		id := idHeader(response)
 		data, err := ioutil.ReadAll(response.Body)
 		if err != nil {
-			return errors.Errorf("failed to %s: received status code %d", action, response.StatusCode)
+			return errors.Errorf("failed to %s: received status code %d [ID:%v]", action, response.StatusCode, id)
 		}
 		var e struct {
 			Code    string `json:"code"`
@@ -739,10 +772,10 @@ func unmarshalError(action string, response *http.Response) error {
 		}
 		err = json.Unmarshal(data, &e)
 		if err != nil {
-			return errors.Errorf("failed to %v: received status code %d and response %q", action, response.StatusCode, string(data))
+			return errors.Errorf("failed to %v: received status code %d and response %q [ID:%v]", action, response.StatusCode, string(data), id)
 		}
 
-		msg := fmt.Sprintf("failed to %v", action)
+		msg := fmt.Sprintf("failed to %v [ID:%v]", action, id)
 		retErr := fmt.Errorf(e.Message)
 
 		switch response.StatusCode {
@@ -757,7 +790,7 @@ func unmarshalError(action string, response *http.Response) error {
 		case http.StatusConflict:
 			return errors.NewAlreadyExists(retErr, msg)
 		default:
-			return errors.Errorf("failed to %v: %v [%v]", action, e.Message, e.Code)
+			return errors.Errorf("failed to %v: %v [code: %v, ID:%v]", action, e.Message, e.Code, id)
 		}
 	}
 	return nil
