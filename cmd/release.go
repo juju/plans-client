@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -77,7 +78,7 @@ func (c *ReleaseCommand) Run(ctx *cmd.Context) error {
 	if err != nil {
 		return errors.Annotate(err, "failed to create a plan API client")
 	}
-	plan, err := apiClient.Release(c.Plan)
+	plan, err := apiClient.Release(context.Background(), c.Plan)
 	if err != nil {
 		return errors.Trace(err)
 	}

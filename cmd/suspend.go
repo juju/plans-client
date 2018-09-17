@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/juju/cmd"
 	"github.com/juju/errors"
 	"github.com/juju/gnuflag"
@@ -97,9 +99,9 @@ func (c *suspendResumeCommand) Run(ctx *cmd.Context) error {
 	}
 	switch c.op {
 	case suspendOp:
-		return errors.Trace(apiClient.Suspend(c.PlanURL, c.All, c.CharmURLs...))
+		return errors.Trace(apiClient.Suspend(context.Background(), c.PlanURL, c.All, c.CharmURLs...))
 	case resumeOp:
-		return errors.Trace(apiClient.Resume(c.PlanURL, c.All, c.CharmURLs...))
+		return errors.Trace(apiClient.Resume(context.Background(), c.PlanURL, c.All, c.CharmURLs...))
 	default:
 		return errors.New("unknown operation")
 	}

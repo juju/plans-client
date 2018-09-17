@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
 	"github.com/juju/cmd"
@@ -121,7 +122,7 @@ func (c *AttachCommand) Run(ctx *cmd.Context) error {
 		return errors.Annotate(err, "failed to create a plan API client")
 	}
 
-	plans, err := apiClient.Get(c.PlanURL)
+	plans, err := apiClient.Get(context.Background(), c.PlanURL)
 	if err != nil {
 		return errors.Annotatef(err, "failed to retrieve plan %v", c.PlanURL)
 	}
@@ -147,7 +148,7 @@ func (c *AttachCommand) Run(ctx *cmd.Context) error {
 		return errors.Errorf("plan %v cannot be used to rate charm %v: no common metrics", c.PlanURL, c.CharmURL)
 	}
 
-	err = apiClient.AddCharm(c.PlanURL, c.CharmURL, c.IsDefault)
+	err = apiClient.AddCharm(context.Background(), c.PlanURL, c.CharmURL, c.IsDefault)
 	if err != nil {
 		return errors.Annotate(err, "failed to retrieve plans")
 	}
