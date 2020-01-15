@@ -10,7 +10,7 @@ import (
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
-	"gopkg.in/macaroon-bakery.v1/httpbakery"
+	"gopkg.in/macaroon-bakery.v2/httpbakery"
 
 	"github.com/juju/plans-client/api"
 	"github.com/juju/plans-client/api/wireformat"
@@ -88,7 +88,7 @@ canonical/test-plan/1	2017-12-01T00:00:00Z	              	test definition
 		stdout: `- id: canonical/test-plan/1
   url: canonical/test-plan
   plan: test definition
-  created-on: 2017-12-01T00:00:00Z
+  created-on: "2017-12-01T00:00:00Z"
   description: test plan description
   price: test plan price
   released: true

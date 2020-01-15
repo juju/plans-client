@@ -4,13 +4,12 @@
 package cmd
 
 import (
-	"net/http"
-	"net/url"
 	"os"
 
 	"github.com/juju/errors"
-	"gopkg.in/juju/charm.v6-unstable"
-	"gopkg.in/juju/charmrepo.v2-unstable"
+	"gopkg.in/juju/charm.v6"
+	"gopkg.in/juju/charmrepo.v4"
+	"gopkg.in/macaroon-bakery.v2/httpbakery"
 )
 
 var defaultCharmStoreURL = "http://api.jujucharms.com/charmstore"
@@ -24,10 +23,10 @@ func init() {
 // charmResolver interface defines the functionality to resolve a charm URL.
 type charmResolver interface {
 	// Resolve resolves the charm URL.
-	Resolve(*http.Client, func(url *url.URL) error, string) (string, error)
+	Resolve(*httpbakery.Client, string) (string, error)
 	// Metrics returns a slice of metric names that the
 	// charm collects.
-	Metrics(*http.Client, func(url *url.URL) error, string) ([]string, error)
+	Metrics(*httpbakery.Client, string) ([]string, error)
 }
 
 // charmStoreResolver implements the charmResolver interface.
@@ -35,7 +34,7 @@ type charmStoreResolver struct {
 	csURL string
 }
 
-// NewcharmStoreResolver creates a new charm store resolver.
+// NewCharmStoreResolver creates a new charm store resolver.
 func NewCharmStoreResolver() *charmStoreResolver {
 	return &charmStoreResolver{
 		csURL: defaultCharmStoreURL,
@@ -43,11 +42,10 @@ func NewCharmStoreResolver() *charmStoreResolver {
 }
 
 // Resolve implements the charmResolver interface.
-func (r *charmStoreResolver) Resolve(client *http.Client, openWebBrowser func(url *url.URL) error, charmURL string) (string, error) {
+func (r *charmStoreResolver) Resolve(client *httpbakery.Client, charmURL string) (string, error) {
 	repo := charmrepo.NewCharmStore(charmrepo.NewCharmStoreParams{
 		URL:          r.csURL,
-		HTTPClient:   client,
-		VisitWebPage: openWebBrowser,
+		BakeryClient: client,
 	})
 	curl, err := charm.ParseURL(charmURL)
 	if err != nil {
@@ -64,14 +62,13 @@ func (r *charmStoreResolver) Resolve(client *http.Client, openWebBrowser func(ur
 	return resolvedURL.String(), nil
 }
 
-func (r *charmStoreResolver) Metrics(client *http.Client, openWebBrowser func(url *url.URL) error, charmURL string) ([]string, error) {
+func (r *charmStoreResolver) Metrics(client *httpbakery.Client, charmURL string) ([]string, error) {
 	fail := func(err error) ([]string, error) {
 		return []string{}, err
 	}
 	repo := charmrepo.NewCharmStore(charmrepo.NewCharmStoreParams{
 		URL:          r.csURL,
-		HTTPClient:   client,
-		VisitWebPage: openWebBrowser,
+		BakeryClient: client,
 	})
 	curl, err := charm.ParseURL(charmURL)
 	if err != nil {
