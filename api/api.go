@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"github.com/juju/errors"
-	"gopkg.in/macaroon-bakery.v1/httpbakery"
+	"gopkg.in/macaroon-bakery.v2/httpbakery"
 	"gopkg.in/macaroon.v1"
 
 	"github.com/juju/plans-client/api/wireformat"
@@ -76,7 +76,6 @@ func idHeader(response *http.Response) string {
 }
 
 type httpClient interface {
-	DoWithBody(req *http.Request, body io.ReadSeeker) (*http.Response, error)
 	Do(req *http.Request) (*http.Response, error)
 }
 
@@ -190,14 +189,14 @@ func (c *client) suspendResume(ctx context.Context, operation, planURL string, a
 	if err != nil {
 		return errors.Trace(err)
 	}
-	req, err := http.NewRequest("POST", u.String(), nil)
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(data))
 	if err != nil {
 		return errors.Trace(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req = requestWithId(ctx, req)
 
-	response, err := c.client.DoWithBody(req, bytes.NewReader(data))
+	response, err := c.client.Do(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "refused discharge") {
 			return errors.Errorf(`unauthorized to %s plan: please run "charm whoami" to verify you are member of the %q group`, operation, pURL.Owner)
@@ -235,14 +234,14 @@ func (c *client) Save(ctx context.Context, planURL string, definition string) (*
 		return nil, errors.Annotate(err, "failed to marshal the plan structure")
 	}
 
-	req, err := http.NewRequest("POST", u.String(), nil)
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(payload.Bytes()))
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to create a POST request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req = requestWithId(ctx, req)
 
-	response, err := c.client.DoWithBody(req, bytes.NewReader(payload.Bytes()))
+	response, err := c.client.Do(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "refused discharge") {
 			return nil, errors.Errorf(`unauthorized to save the plan: please run "charm whoami" to verify you are member of the %q group`, pURL.Owner)
@@ -295,14 +294,14 @@ func (c *client) AddCharm(ctx context.Context, planURL string, charmURL string, 
 		return errors.Annotate(err, "failed to marshal the plan structure")
 	}
 
-	req, err := http.NewRequest("POST", u.String(), nil)
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(payload.Bytes()))
 	if err != nil {
 		return errors.Annotate(err, "failed to create a POST request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req = requestWithId(ctx, req)
 
-	response, err := c.client.DoWithBody(req, bytes.NewReader(payload.Bytes()))
+	response, err := c.client.Do(req)
 	if err != nil {
 		if strings.Contains(err.Error(), "refused discharge") {
 			return errors.Errorf(`unauthorized to add charm: please run "charm whoami" to verify you are member of the %q group`, pURL.Owner)
@@ -572,14 +571,14 @@ func (c *client) Authorize(ctx context.Context, environmentUUID, charmURL, servi
 		return nil, errors.Trace(err)
 	}
 
-	req, err := http.NewRequest("POST", u.String(), nil)
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(buff.Bytes()))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req = requestWithId(ctx, req)
 
-	response, err := c.client.DoWithBody(req, bytes.NewReader(buff.Bytes()))
+	response, err := c.client.Do(req)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -668,14 +667,14 @@ func (c *client) AuthorizeReseller(ctx context.Context, plan, charm, application
 		return nil, errors.Trace(err)
 	}
 
-	req, err := http.NewRequest("POST", u.String(), nil)
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(buff.Bytes()))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req = requestWithId(ctx, req)
 
-	response, err := c.client.DoWithBody(req, bytes.NewReader(buff.Bytes()))
+	response, err := c.client.Do(req)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}

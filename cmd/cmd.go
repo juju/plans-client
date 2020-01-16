@@ -5,20 +5,16 @@ package cmd
 
 import (
 	"io/ioutil"
-	"net/http"
 	"os"
-	"path"
 
 	"github.com/juju/cmd"
-	"github.com/juju/errors"
 	"github.com/juju/gnuflag"
 	"github.com/juju/idmclient/ussologin"
 	"github.com/juju/juju/juju/osenv"
-	"github.com/juju/juju/jujuclient"
-	"github.com/juju/persistent-cookiejar"
-	"github.com/juju/utils"
+	cookiejar "github.com/juju/persistent-cookiejar"
+	"golang.org/x/net/publicsuffix"
 	"gopkg.in/juju/environschema.v1/form"
-	"gopkg.in/macaroon-bakery.v1/httpbakery"
+	"gopkg.in/macaroon-bakery.v2/httpbakery"
 )
 
 var (
@@ -47,40 +43,37 @@ type baseCommand struct {
 
 // NewClient returns a new http bakery client for Omnibus commands.
 func (s *baseCommand) NewClient(ctx *cmd.Context) (*httpbakery.Client, func(), error) {
-	jujuXDGDataHome := osenv.JujuXDGDataHomeDir()
-	if jujuXDGDataHome == "" {
-		return nil, func() {}, errors.Errorf("cannot determine juju data home, required environment variables are not set")
+	jar, err := cookiejar.New(&cookiejar.Options{
+		PublicSuffixList: publicsuffix.List,
+		Filename:         cookiejar.DefaultCookieFile(),
+	})
+	if err != nil {
+		return nil, nil, err
 	}
-	osenv.SetJujuXDGDataHome(jujuXDGDataHome)
-	client := httpbakery.NewClient()
-	filler := &form.IOFiller{
-		In:  os.Stdin,
-		Out: os.Stdout,
-	}
+	bakeryClient := httpbakery.NewClient()
+	bakeryClient.Jar = jar
+
 	if s.NoBrowser {
-		client.VisitWebPage = ussologin.VisitWebPage(
-			"juju",
-			&http.Client{},
-			filler,
-			jujuclient.NewTokenStore(),
-		)
-	} else {
-		client.VisitWebPage = httpbakery.OpenWebBrowser
+		tokenStore := ussologin.NewFileTokenStore(ussoTokenPath())
+		bakeryClient.AddInteractor(ussologin.NewInteractor(ussologin.StoreTokenGetter{
+			Store: tokenStore,
+			TokenGetter: ussologin.FormTokenGetter{
+				Filler: &form.IOFiller{
+					In:  os.Stdin,
+					Out: os.Stdout,
+				},
+				Name: "charm",
+			},
+		}))
 	}
-	if jar, err := cookiejar.New(&cookiejar.Options{
-		Filename: cookieFile(),
-	}); err == nil {
-		client.Jar = jar
-		return client, func() {
-			err := jar.Save()
-			if err != nil {
-				ctx.Warningf("failed to save cookie jar: %v", err)
-			}
-		}, nil
-	} else {
-		ctx.Warningf("failed to create cookie jar")
-		return client, func() {}, nil
-	}
+	bakeryClient.AddInteractor(httpbakery.WebBrowserInteractor{})
+
+	return bakeryClient, func() {
+		err := jar.Save()
+		if err != nil {
+			ctx.Warningf("failed to save cookie jar: %v", err)
+		}
+	}, nil
 }
 
 // Close saves the persistent cookie jar used by the specified httpbakery.Client.
@@ -106,12 +99,6 @@ func (c *baseCommand) SetFlags(f *gnuflag.FlagSet) {
 	f.StringVar(&c.ServiceURL, "url", c.ServiceURL, "host and port of the plans services")
 }
 
-// cookieFile returns the path to the cookie used to store authorization
-// macaroons. The returned value can be overridden by setting the
-// JUJU_COOKIEFILE environment variable.
-func cookieFile() string {
-	if file := os.Getenv("JUJU_COOKIEFILE"); file != "" {
-		return file
-	}
-	return path.Join(utils.Home(), ".go-cookies")
+func ussoTokenPath() string {
+	return osenv.JujuXDGDataHomePath("store-usso-token")
 }

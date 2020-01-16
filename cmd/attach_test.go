@@ -4,14 +4,11 @@
 package cmd_test
 
 import (
-	"net/http"
-	"net/url"
-
 	"github.com/juju/cmd/cmdtesting"
 	"github.com/juju/testing"
 	jc "github.com/juju/testing/checkers"
 	gc "gopkg.in/check.v1"
-	"gopkg.in/macaroon-bakery.v1/httpbakery"
+	"gopkg.in/macaroon-bakery.v2/httpbakery"
 
 	"github.com/juju/plans-client/api"
 	"github.com/juju/plans-client/cmd"
@@ -151,7 +148,7 @@ type mockCharmResolver struct {
 }
 
 // Resolve implements cmd.CharmResolver.
-func (r *mockCharmResolver) Resolve(_ *http.Client, _ func(url *url.URL) error, charmURL string) (string, error) {
+func (r *mockCharmResolver) Resolve(_ *httpbakery.Client, charmURL string) (string, error) {
 	r.AddCall("Resolve", charmURL)
 	if r.ResolvedURL != "" {
 		return r.ResolvedURL, r.NextErr()
@@ -159,7 +156,7 @@ func (r *mockCharmResolver) Resolve(_ *http.Client, _ func(url *url.URL) error, 
 	return charmURL, r.NextErr()
 }
 
-func (r *mockCharmResolver) Metrics(_ *http.Client, _ func(url *url.URL) error, charmURL string) ([]string, error) {
+func (r *mockCharmResolver) Metrics(_ *httpbakery.Client, charmURL string) ([]string, error) {
 	r.AddCall("Resolve", charmURL)
 	if r.CharmMetrics != nil {
 		return r.CharmMetrics, r.NextErr()

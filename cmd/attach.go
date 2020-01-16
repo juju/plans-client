@@ -10,6 +10,7 @@ import (
 	"github.com/juju/cmd"
 	"github.com/juju/errors"
 	"github.com/juju/gnuflag"
+	"github.com/juju/juju/cmd/output"
 	"gopkg.in/yaml.v2"
 
 	"github.com/juju/plans-client/api/wireformat"
@@ -49,7 +50,7 @@ func NewAttachCommand() cmd.Command {
 func (c *AttachCommand) SetFlags(f *gnuflag.FlagSet) {
 	c.baseCommand.ServiceURL = defaultServiceURL()
 	c.baseCommand.SetFlags(f)
-	c.out.AddFlags(f, "smart", cmd.DefaultFormatters)
+	c.out.AddFlags(f, "yaml", output.DefaultFormatters)
 	f.BoolVar(&c.IsDefault, "default", false, "set this plan as the default for the charm")
 }
 
@@ -89,7 +90,7 @@ func (c *AttachCommand) Init(args []string) error {
 		return errors.Annotate(err, "could not create API client")
 	}
 	defer cleanup()
-	resolved, err := c.CharmResolver.Resolve(client.Client, client.VisitWebPage, charmURL)
+	resolved, err := c.CharmResolver.Resolve(client, charmURL)
 	if err != nil {
 		return errors.Annotate(err, "could not resolve charm url")
 	}
@@ -140,7 +141,7 @@ func (c *AttachCommand) Run(ctx *cmd.Context) error {
 	if err != nil {
 		return errors.Trace(err)
 	}
-	charmMetricNames, err := c.CharmResolver.Metrics(client.Client, client.VisitWebPage, c.CharmURL)
+	charmMetricNames, err := c.CharmResolver.Metrics(client, c.CharmURL)
 	if err != nil {
 		return errors.Trace(err)
 	}
