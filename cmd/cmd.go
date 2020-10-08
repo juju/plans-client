@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/canonical/candid/candidclient/ussologin"
 	"github.com/juju/cmd"
 	"github.com/juju/gnuflag"
-	"github.com/juju/idmclient/ussologin"
 	"github.com/juju/juju/juju/osenv"
 	cookiejar "github.com/juju/persistent-cookiejar"
 	"golang.org/x/net/publicsuffix"
