@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/juju/errors"
-	"gopkg.in/juju/names.v2"
+	"github.com/juju/names/v4"
 )
 
 // Regular expression for validating plan names.

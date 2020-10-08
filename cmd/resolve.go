@@ -6,9 +6,9 @@ package cmd
 import (
 	"os"
 
+	"github.com/juju/charm/v8"
+	"github.com/juju/charmrepo/v6"
 	"github.com/juju/errors"
-	"gopkg.in/juju/charm.v6"
-	"gopkg.in/juju/charmrepo.v4"
 	"gopkg.in/macaroon-bakery.v2/httpbakery"
 )
 
